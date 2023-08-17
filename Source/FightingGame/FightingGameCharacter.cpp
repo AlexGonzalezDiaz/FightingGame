@@ -49,6 +49,9 @@ AFightingGameCharacter::AFightingGameCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	baseHealth = 1.00f;
+	dmg = 0.0f;
 }
 
 void AFightingGameCharacter::BeginPlay()
@@ -66,6 +69,23 @@ void AFightingGameCharacter::BeginPlay()
 	}
 }
 
+void AFightingGameCharacter::dmgAmntCalc(float dmgAmount)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Taking"));
+	baseHealth -= dmgAmount;
+
+	if (baseHealth < 0.00f)
+	{
+		baseHealth = 0.00f;
+	}
+}
+
+void AFightingGameCharacter::Attack()
+{
+	dmg = 0.05f;
+	dmgAmntCalc(dmg);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -73,7 +93,7 @@ void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+
 		//Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
@@ -84,6 +104,9 @@ void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFightingGameCharacter::Look);
 
+		//Attacking
+
+		PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFightingGameCharacter::Attack);
 	}
 
 }

@@ -37,9 +37,16 @@ class AFightingGameCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* AttackAction;
+	
 public:
 	AFightingGameCharacter();
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float baseHealth;
+
+	float dmg;
 
 protected:
 
@@ -48,6 +55,10 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void dmgAmntCalc(float dmgAmount);
+
+	void Attack();
 			
 
 protected:
@@ -58,6 +69,8 @@ protected:
 	virtual void BeginPlay();
 
 public:
+
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
