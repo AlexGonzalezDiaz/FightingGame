@@ -7,6 +7,13 @@
 #include "FightingGameCharacter.h"
 #include "FightingGameGameMode.generated.h"
 
+UENUM(BlueprintType)
+enum class ECharacterClass : uint8
+{
+	VE_Default	UMETA(DisplayName = "Mannequin"),
+	VE_Laboon	UMETA(DisplayName = "Laboon")
+};
+
 UCLASS(minimalapi)
 class AFightingGameGameMode : public AGameModeBase
 {
