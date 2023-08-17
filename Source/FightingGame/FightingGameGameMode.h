@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "FightingGameCharacter.h"
 #include "FightingGameGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -13,6 +14,13 @@ class AFightingGameGameMode : public AGameModeBase
 
 public:
 	AFightingGameGameMode();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
+	AFightingGameCharacter* player1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
+	AFightingGameCharacter* player2;
+
 };
 
 
