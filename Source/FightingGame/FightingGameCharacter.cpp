@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "FightingGameGameMode.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -59,19 +60,27 @@ void AFightingGameCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	UE_LOG(LogTemp, Warning, TEXT("Inside Begin play"));
+	if (auto gameMode = Cast<AFightingGameGameMode>(GetWorld()->GetAuthGameMode()))
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (gameMode->player1 == this)
 		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			//Add Input Mapping Context
+			if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Controller Cast successful"));
+				if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Controller"));
+					Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				}
+			}
 		}
 	}
 }
 
 void AFightingGameCharacter::dmgAmntCalc(float dmgAmount)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Taking"));
 	baseHealth -= dmgAmount;
 
 	if (baseHealth < 0.00f)
@@ -83,6 +92,7 @@ void AFightingGameCharacter::dmgAmntCalc(float dmgAmount)
 void AFightingGameCharacter::Attack()
 {
 	dmg = 0.05f;
+	UE_LOG(LogTemp, Warning, TEXT("Attack"));
 	dmgAmntCalc(dmg);
 }
 
@@ -91,24 +101,30 @@ void AFightingGameCharacter::Attack()
 
 void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
+	if (auto gameMode = Cast<AFightingGameGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		if (gameMode->player1 == this)
+		{
 
-		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+			// Set up action bindings
+			if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 
-		//Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AFightingGameCharacter::Move);
+				//Jumping
+				EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+				EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
-		//Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFightingGameCharacter::Look);
+				//Moving
+				EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AFightingGameCharacter::Move);
 
-		//Attacking
+				//Looking
+				EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFightingGameCharacter::Look);
 
-		PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFightingGameCharacter::Attack);
+				//Attacking
+
+				PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFightingGameCharacter::Attack);
+			}
+		}
 	}
-
 }
 
 void AFightingGameCharacter::Move(const FInputActionValue& Value)
@@ -118,6 +134,7 @@ void AFightingGameCharacter::Move(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Controll activated"));
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
