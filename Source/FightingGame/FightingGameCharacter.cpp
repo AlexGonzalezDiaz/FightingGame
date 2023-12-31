@@ -8,6 +8,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "FightingGameGameMode.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
@@ -26,7 +27,7 @@ AFightingGameCharacter::AFightingGameCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -37,22 +38,30 @@ AFightingGameCharacter::AFightingGameCharacter()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
-	// Create a camera boom (pulls in towards the player if there is a collision)
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	//// Create a camera boom (pulls in towards the player if there is a collision)
+	//CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	//CameraBoom->SetupAttachment(RootComponent);
+	//CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	//CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	// Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	//// Create a follow camera
+	//FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	//FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
+	otherPlayer = nullptr;
+	characterMesh = nullptr;
+	capsuleChildren.SetNum(0);
+	transform = FTransform();
+	scale = FVector(0.0f, 0.0f, 0.0f);
 	baseHealth = 1.00f;
+	wasNormalAttackUsed = false;
 	dmg = 0.0f;
+	isLockedOn = false;
+	isFlipped = true;
 }
 
 void AFightingGameCharacter::BeginPlay()
@@ -60,7 +69,7 @@ void AFightingGameCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("Inside Begin play"));
+
 	if (auto gameMode = Cast<AFightingGameGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		if (gameMode->player1 == this)
@@ -68,10 +77,8 @@ void AFightingGameCharacter::BeginPlay()
 			//Add Input Mapping Context
 			if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Controller Cast successful"));
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Controller"));
 					Subsystem->AddMappingContext(DefaultMappingContext, 0);
 				}
 			}
@@ -93,8 +100,60 @@ void AFightingGameCharacter::Attack()
 {
 	dmg = 0.05f;
 	UE_LOG(LogTemp, Warning, TEXT("Attack"));
+	wasNormalAttackUsed = true;
 	dmgAmntCalc(dmg);
 }
+
+void AFightingGameCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Logic of Flip
+	GetCapsuleComponent()->GetChildrenComponents(true, capsuleChildren);
+	for (auto child : capsuleChildren)
+	{
+		if (child->GetName().Contains("CharacterMesh0"))
+		{
+			characterMesh = child;
+			break;
+		}
+	}
+	if (otherPlayer)
+	{
+		
+		if (otherPlayer->GetActorLocation().Y > GetActorLocation().Y)
+		{
+			if ((characterMesh) && (isFlipped))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Flip >"));
+				transform = characterMesh->GetRelativeTransform();
+				scale = transform.GetScale3D();
+				scale.Y = 1.0;
+				transform.SetScale3D(scale);
+				characterMesh->SetRelativeTransform(transform);
+				isFlipped = false;
+			}
+		}
+		else if (otherPlayer->GetActorLocation().Y < GetActorLocation().Y)
+		{
+			if ((characterMesh) && (!isFlipped))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Flip <"));
+				transform = characterMesh->GetRelativeTransform();
+				scale = transform.GetScale3D();
+				scale.Y = -1.0;
+				transform.SetScale3D(scale);
+				characterMesh->SetRelativeTransform(transform);
+				isFlipped = true;
+			}
+					
+		}
+			
+		
+	}
+	
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -129,12 +188,10 @@ void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 
 void AFightingGameCharacter::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Controll activated"));
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -144,7 +201,6 @@ void AFightingGameCharacter::Move(const FInputActionValue& Value)
 	
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);

@@ -13,13 +13,13 @@ class AFightingGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
+	///** Camera boom positioning the camera behind the character */
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	//class USpringArmComponent* CameraBoom;
 
-	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+	///** Follow camera */
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	//class UCameraComponent* FollowCamera;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -46,9 +46,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float baseHealth;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lock-On")
+	bool isLockedOn;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
+	AFightingGameCharacter* otherPlayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	USceneComponent* characterMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	TArray<USceneComponent*> capsuleChildren;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
+	bool isFlipped;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
+	FTransform transform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
+	FVector scale;
+
 	float dmg;
 
 protected:
+
+	// Check for Attacks
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasNormalAttackUsed;
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -59,6 +84,8 @@ protected:
 	void dmgAmntCalc(float dmgAmount);
 
 	void Attack();
+
+	void Tick(float DeltaTime);
 			
 
 protected:
@@ -71,9 +98,9 @@ protected:
 public:
 
 
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	///** Returns CameraBoom subobject **/
+	//FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	///** Returns FollowCamera subobject **/
+	//FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
 
