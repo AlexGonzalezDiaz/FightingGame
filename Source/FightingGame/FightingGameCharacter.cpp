@@ -109,7 +109,7 @@ void AFightingGameCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// Logic of Flip
-	GetCapsuleComponent()->GetChildrenComponents(true, capsuleChildren);
+	/*GetCapsuleComponent()->GetChildrenComponents(true, capsuleChildren);
 	for (auto child : capsuleChildren)
 	{
 		if (child->GetName().Contains("CharacterMesh0"))
@@ -150,7 +150,7 @@ void AFightingGameCharacter::Tick(float DeltaTime)
 		}
 			
 		
-	}
+	}*/
 	
 }
 
