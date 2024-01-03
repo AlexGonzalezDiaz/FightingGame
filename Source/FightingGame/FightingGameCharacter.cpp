@@ -108,49 +108,7 @@ void AFightingGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Logic of Flip
-	/*GetCapsuleComponent()->GetChildrenComponents(true, capsuleChildren);
-	for (auto child : capsuleChildren)
-	{
-		if (child->GetName().Contains("CharacterMesh0"))
-		{
-			characterMesh = child;
-			break;
-		}
-	}
-	if (otherPlayer)
-	{
-		
-		if (otherPlayer->GetActorLocation().Y > GetActorLocation().Y)
-		{
-			if ((characterMesh) && (isFlipped))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Flip >"));
-				transform = characterMesh->GetRelativeTransform();
-				scale = transform.GetScale3D();
-				scale.Y = 1.0;
-				transform.SetScale3D(scale);
-				characterMesh->SetRelativeTransform(transform);
-				isFlipped = false;
-			}
-		}
-		else if (otherPlayer->GetActorLocation().Y < GetActorLocation().Y)
-		{
-			if ((characterMesh) && (!isFlipped))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Flip <"));
-				transform = characterMesh->GetRelativeTransform();
-				scale = transform.GetScale3D();
-				scale.Y = -1.0;
-				transform.SetScale3D(scale);
-				characterMesh->SetRelativeTransform(transform);
-				isFlipped = true;
-			}
-					
-		}
-			
-		
-	}*/
+	
 	
 }
 
