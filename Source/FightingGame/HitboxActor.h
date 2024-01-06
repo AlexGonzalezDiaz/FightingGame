@@ -40,6 +40,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	FVector hitboxLocation;
 
+	//The rotation to spawn the hitbox.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
+	FVector hitboxRotation;
+
 protected:
 
 public:	
