@@ -54,6 +54,7 @@ AFightingGameCharacter::AFightingGameCharacter()
 
 	otherPlayer = nullptr;
 	characterMesh = nullptr;
+	hurtbox = nullptr;
 	capsuleChildren.SetNum(0);
 	transform = FTransform();
 	scale = FVector(0.0f, 0.0f, 0.0f);
@@ -101,7 +102,6 @@ void AFightingGameCharacter::Attack()
 	dmg = 0.05f;
 	UE_LOG(LogTemp, Warning, TEXT("Attack"));
 	wasNormalAttackUsed = true;
-	dmgAmntCalc(dmg);
 }
 
 void AFightingGameCharacter::Tick(float DeltaTime)
