@@ -83,6 +83,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool wasNormalAttackUsed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool isSideStep;
+
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 

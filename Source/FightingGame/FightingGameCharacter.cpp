@@ -63,6 +63,7 @@ AFightingGameCharacter::AFightingGameCharacter()
 	dmg = 0.0f;
 	isLockedOn = false;
 	isFlipped = true;
+	isSideStep = false;
 }
 
 void AFightingGameCharacter::BeginPlay()
