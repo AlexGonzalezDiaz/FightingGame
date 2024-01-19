@@ -64,6 +64,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	bool isFlipped;
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	FTransform transform;
 
@@ -76,6 +77,8 @@ public:
 	void dmgAmntCalc(float dmgAmount);
 
 	float dmg;
+
+	float flipInput;
 
 protected:
 
