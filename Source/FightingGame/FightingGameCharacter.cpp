@@ -56,6 +56,7 @@ AFightingGameCharacter::AFightingGameCharacter()
 	characterMesh = nullptr;
 	hurtbox = nullptr;
 	capsuleChildren.SetNum(0);
+	directionalInput = EDirectionalInput::VE_Default;
 	transform = FTransform();
 	scale = FVector(0.0f, 0.0f, 0.0f);
 	baseHealth = 1.00f;
@@ -65,6 +66,10 @@ AFightingGameCharacter::AFightingGameCharacter()
 	isFlipped = false;
 	flipInput = 1.0f;
 	isSideStep = false;
+	wasLightAttackedUsed = false;
+	wasMeduimAttackedUsed = false;
+	wasHeavyAttackedUsed = false;
+	wasSpecialAttackedUsed = false;
 }
 
 void AFightingGameCharacter::BeginPlay()
@@ -99,11 +104,12 @@ void AFightingGameCharacter::dmgAmntCalc(float dmgAmount)
 	}
 }
 
-void AFightingGameCharacter::Attack()
+void AFightingGameCharacter::LightAttack()
 {
-	dmg = 0.05f;
-	UE_LOG(LogTemp, Warning, TEXT("Attack"));
-	wasNormalAttackUsed = true;
+}
+
+void AFightingGameCharacter::SpecialAttack()
+{
 }
 
 void AFightingGameCharacter::Tick(float DeltaTime)
@@ -140,7 +146,7 @@ void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 
 				//Attacking
 
-				PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFightingGameCharacter::Attack);
+				//PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AFightingGameCharacter::Attack);
 			}
 		}
 	}
@@ -149,24 +155,44 @@ void AFightingGameCharacter::SetupPlayerInputComponent(class UInputComponent* Pl
 void AFightingGameCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector2D directionVector = Value.Get<FVector2d>();
+
 
 	if (Controller != nullptr)
 	{
+		
 		if (isFlipped) {
 			MovementVector = MovementVector * -1.0f;
 		}
-			// find out which way is forward
-			const FRotator Rotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-			// get forward vector
-			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		UE_LOG(LogTemp, Warning, TEXT("%f"), MovementVector.Y);
+		// Attempting to get the right button key press and setting our enum value. 
+		if (MovementVector.Y > 0.02f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Forward"));
+			directionalInput = EDirectionalInput::VE_ForwardInput;
+		}
+		else if (MovementVector.Y < 0.02f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Back"));
+			directionalInput = EDirectionalInput::VE_BackwardInput;
+		}
+		else 
+		{
+			directionalInput = EDirectionalInput::VE_Default;
+		}
 
-			// get right vector 
-			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-			// add movement 
-			AddMovementInput(ForwardDirection, MovementVector.Y);
-			AddMovementInput(RightDirection, MovementVector.X);
+		// find out which way is forward
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// get forward vector
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		// get right vector 
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// add movement 
+		AddMovementInput(ForwardDirection, MovementVector.Y);
+		AddMovementInput(RightDirection, MovementVector.X);
 	}
 }
 

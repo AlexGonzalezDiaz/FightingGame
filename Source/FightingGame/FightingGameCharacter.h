@@ -7,6 +7,13 @@
 #include "InputActionValue.h"
 #include "FightingGameCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class EDirectionalInput : uint8
+{
+	VE_Default			UMETA(DisplayName = "NEUTRAL"),
+	VE_ForwardInput		UMETA(DisplayName = "FWD_INPUT"),
+	VE_BackwardInput	UMETA(DisplayName = "BCK_INPUT")
+};
 
 UCLASS(config=Game)
 class AFightingGameCharacter : public ACharacter
@@ -52,6 +59,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
 	AFightingGameCharacter* otherPlayer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	EDirectionalInput directionalInput;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	AActor* hurtbox;
 
@@ -64,20 +74,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	bool isFlipped;
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	FTransform transform;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	FVector scale;
 
-	
-
 	UFUNCTION(BlueprintCallable)
 	void dmgAmntCalc(float dmgAmount);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasLightAttackedUsed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasMeduimAttackedUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasHeavyAttackedUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasSpecialAttackedUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float flipInput;
 
 protected:
@@ -95,7 +116,9 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void Attack();
+	void LightAttack();
+
+	void SpecialAttack();
 
 	void Tick(float DeltaTime);
 			
