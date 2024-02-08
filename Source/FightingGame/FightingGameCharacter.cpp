@@ -56,7 +56,7 @@ AFightingGameCharacter::AFightingGameCharacter()
 	characterMesh = nullptr;
 	hurtbox = nullptr;
 	capsuleChildren.SetNum(0);
-	directionalInput = EDirectionalInput::VE_Default;
+	characterState = ECharacterState::VE_Default;
 	transform = FTransform();
 	scale = FVector(0.0f, 0.0f, 0.0f);
 	baseHealth = 1.00f;
@@ -64,12 +64,18 @@ AFightingGameCharacter::AFightingGameCharacter()
 	dmg = 0.0f;
 	isLockedOn = false;
 	isFlipped = false;
+
 	flipInput = 1.0f;
+	canMove = true;
+	gravityScale = GetCharacterMovement()->GravityScale;
+	stunTime = 0.0f;
 	isSideStep = false;
+
 	wasLightAttackedUsed = false;
 	wasMeduimAttackedUsed = false;
 	wasHeavyAttackedUsed = false;
 	wasSpecialAttackedUsed = false;
+	hasLandedHit = false;
 }
 
 void AFightingGameCharacter::BeginPlay()
@@ -94,14 +100,50 @@ void AFightingGameCharacter::BeginPlay()
 	}
 }
 
-void AFightingGameCharacter::dmgAmntCalc(float dmgAmount)
+void AFightingGameCharacter::Landed(const FHitResult& Hit)
+{
+	if (characterState == ECharacterState::VE_Launched)
+	{
+		GetCharacterMovement()->GravityScale = gravityScale;
+		characterState = ECharacterState::VE_Default;
+	}
+	
+}
+
+void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _launchAmount)
 {
 	baseHealth -= dmgAmount;
+
+	characterState = ECharacterState::VE_Stunned;
+	stunTime = _stunTime;
+	BeginStun();
+
+	if (otherPlayer) {
+		otherPlayer->hasLandedHit = true;
+		otherPlayer->performPushback(0.0f, 0.0f, false);
+	}
+
+	if (_launchAmount > 0.0f) {
+		performPushback(200.0f, _launchAmount, false);
+	}
 
 	if (baseHealth < 0.00f)
 	{
 		baseHealth = 0.00f;
 	}
+}
+
+void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked)
+{
+	if (_launchAmount > 0.0f)
+	{
+		GetCharacterMovement()->GravityScale *= 0.5;
+		characterState = ECharacterState::VE_Launched;
+		
+	}
+
+	LaunchCharacter(FVector(0.0f, _pushbackAmount, _launchAmount), false, false);
+	
 }
 
 void AFightingGameCharacter::LightAttack()
@@ -118,6 +160,19 @@ void AFightingGameCharacter::Tick(float DeltaTime)
 
 	
 	
+}
+
+void AFightingGameCharacter::BeginStun()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Stun"));
+	canMove = false;
+	GetWorld()->GetTimerManager().SetTimer(stunTimerHandle, this, &AFightingGameCharacter::EndStun, stunTime, false);
+}
+
+void AFightingGameCharacter::EndStun()
+{
+	characterState = ECharacterState::VE_Default;
+	canMove = true;
 }
 
 
@@ -160,39 +215,38 @@ void AFightingGameCharacter::Move(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		
-		if (isFlipped) {
-			MovementVector = MovementVector * -1.0f;
-		}
+		if (canMove) {
+			if (characterState != ECharacterState::VE_Launched)
+			{
+				if (isFlipped) {
+					MovementVector = MovementVector * -1.0f;
+				}
+				// Attempting to get the right button key press and setting our enum value. 
+				if (MovementVector.Y > 0.02f)
+				{
+					characterState = ECharacterState::VE_ForwardInput;
+				}
+				else if (MovementVector.Y < 0.02f)
+				{
+					characterState = ECharacterState::VE_BackwardInput;
+				}
+				else
+				{
+					characterState = ECharacterState::VE_Default;
+				}
+			}
+			// find out which way is forward
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		UE_LOG(LogTemp, Warning, TEXT("%f"), MovementVector.Y);
-		// Attempting to get the right button key press and setting our enum value. 
-		if (MovementVector.Y > 0.02f)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Forward"));
-			directionalInput = EDirectionalInput::VE_ForwardInput;
+			// get forward vector
+			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			// get right vector 
+			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			// add movement 
+			AddMovementInput(ForwardDirection, MovementVector.Y);
+			AddMovementInput(RightDirection, MovementVector.X);	
 		}
-		else if (MovementVector.Y < 0.02f)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Back"));
-			directionalInput = EDirectionalInput::VE_BackwardInput;
-		}
-		else 
-		{
-			directionalInput = EDirectionalInput::VE_Default;
-		}
-
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
 	}
 }
 

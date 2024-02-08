@@ -8,11 +8,14 @@
 #include "FightingGameCharacter.generated.h"
 
 UENUM(BlueprintType)
-enum class EDirectionalInput : uint8
+enum class ECharacterState : uint8
 {
 	VE_Default			UMETA(DisplayName = "NEUTRAL"),
 	VE_ForwardInput		UMETA(DisplayName = "FWD_INPUT"),
-	VE_BackwardInput	UMETA(DisplayName = "BCK_INPUT")
+	VE_BackwardInput	UMETA(DisplayName = "BCK_INPUT"),
+	VE_Stunned			UMETA(DisplayName = "STUNNED"),
+	VE_Blocking			UMETA(DisplayName = "BLOCKING"),
+	VE_Launched			UMETA(DisplayName = "LAUNCHED")
 };
 
 UCLASS(config=Game)
@@ -60,7 +63,23 @@ public:
 	AFightingGameCharacter* otherPlayer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	EDirectionalInput directionalInput;
+	ECharacterState characterState;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float flipInput;
+
+	//The amount of time the character will be stunned (hitstun, blockstun, or from a stunning attack)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float stunTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool canMove;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float gravityScale;
+
+	//The timer handle for all stuns (hitsuns, blockstuns, and stunning attacks)
+	FTimerHandle stunTimerHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	AActor* hurtbox;
@@ -81,7 +100,10 @@ public:
 	FVector scale;
 
 	UFUNCTION(BlueprintCallable)
-	void dmgAmntCalc(float dmgAmount);
+	void dmgAmntCalc(float dmgAmount, float _stunTime, float _launchAmount);
+
+	UFUNCTION(BlueprintCallable)
+	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
@@ -99,7 +121,7 @@ public:
 	bool wasSpecialAttackedUsed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
-	float flipInput;
+	bool hasLandedHit;
 
 protected:
 
@@ -121,6 +143,12 @@ protected:
 	void SpecialAttack();
 
 	void Tick(float DeltaTime);
+
+	//Enter the Stun state
+	void BeginStun();
+
+	//End the Stun state
+	void EndStun();
 			
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -128,5 +156,7 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
+	//Override the ACharacter and APawn functionality to have more control over jumps and landings.
+	virtual void Landed(const FHitResult& Hit) override;
 };
 
