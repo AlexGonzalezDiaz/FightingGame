@@ -100,7 +100,7 @@ public:
 	FVector scale;
 
 	UFUNCTION(BlueprintCallable)
-	void dmgAmntCalc(float dmgAmount, float _stunTime, float _launchAmount);
+	void dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount);
 
 	UFUNCTION(BlueprintCallable)
 	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);

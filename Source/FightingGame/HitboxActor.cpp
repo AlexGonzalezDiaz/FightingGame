@@ -11,6 +11,7 @@ AHitboxActor::AHitboxActor()
 
 	launchDistance = 0.0f;
 	hitStunTime = 0.0f;
+	pushbackDistance = 0.0f;
 
 }
 
