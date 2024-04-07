@@ -71,11 +71,18 @@ AFightingGameCharacter::AFightingGameCharacter()
 	stunTime = 0.0f;
 	isSideStep = false;
 
+	//Ground Normals and specials
 	wasLightAttackedUsed = false;
 	wasMeduimAttackedUsed = false;
 	wasHeavyAttackedUsed = false;
 	wasSpecialAttackedUsed = false;
 	hasLandedHit = false;
+
+	//Jump Normals
+	wasJumpLightAttackedUsed = false;
+	wasJumpMediumAttackUsed = false;
+	wasJumpeHeavyAttackUsed = false;
+
 }
 
 void AFightingGameCharacter::BeginPlay()

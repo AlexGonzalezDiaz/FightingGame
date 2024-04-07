@@ -112,6 +112,15 @@ public:
 	bool wasLightAttackedUsed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasJumpLightAttackedUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasJumpMediumAttackUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	bool wasJumpeHeavyAttackUsed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool wasMeduimAttackedUsed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")

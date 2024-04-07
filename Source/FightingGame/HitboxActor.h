@@ -60,6 +60,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	float hitStunTime;
 
+	//Check if character was launched already
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
+	bool isLaunched;
+	
+
 protected:
 
 public:	
