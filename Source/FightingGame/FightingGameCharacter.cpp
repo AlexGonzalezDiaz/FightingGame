@@ -10,14 +10,18 @@
 #include "FightingGameGameMode.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "KaijuMovementComponent.h"
 #include "EnhancedInputSubsystems.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 // AFightingGameCharacter
 
-AFightingGameCharacter::AFightingGameCharacter()
+AFightingGameCharacter::AFightingGameCharacter(const FObjectInitializer& ObjectInitializer):
+Super(ObjectInitializer.SetDefaultSubobjectClass<UKaijuMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
+	KaijuMovementComponent = Cast<UKaijuMovementComponent>(GetCharacterMovement());
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -116,7 +120,39 @@ void AFightingGameCharacter::Landed(const FHitResult& Hit)
 		characterState = ECharacterState::VE_Default;
 		UE_LOG(LogTemp, Warning, TEXT("% f"), GetCharacterMovement()->GravityScale);
 	}
-	
+	if (otherPlayer && Hit.GetActor() == otherPlayer)
+	{
+		float offset = 60.0;
+		FVector forwardVector = otherPlayer->GetActorForwardVector().GetAbs();
+		FVector otherPlayerLocation = otherPlayer->GetActorLocation();
+		
+		FVector_NetQuantizeNormal hitLocation = Hit.ImpactPoint;
+		
+		
+		if (hitLocation.Y > otherPlayerLocation.Y )
+		{
+			offset *= 1.0;
+			UE_LOG(LogTemp, Warning, TEXT("Player 1 %s"), *hitLocation.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  player 1 Y is further ahead %s"), *otherPlayer->GetActorLocation().ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  forward vector: %s "), *forwardVector.ToString());
+			FVector maths = forwardVector * offset;
+			FVector newLocation = (forwardVector * offset) + otherPlayer->GetActorLocation();
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  maffs: %s "), *maths.ToString());
+			colliderSlide(GetActorLocation(), FVector(newLocation.X, newLocation.Y, otherPlayerLocation.Z));
+		}
+		else
+		{
+			offset *= -1.0;
+			UE_LOG(LogTemp, Warning, TEXT("Player 1 %s"), *hitLocation.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  player 1 Y is behind %s"), *otherPlayer->GetActorLocation().ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  forward vector: %s "), *forwardVector.ToString());
+			FVector maths = forwardVector * offset;
+			FVector newLocation = (forwardVector * offset) + otherPlayer->GetActorLocation();
+			UE_LOG(LogTemp, Warning, TEXT("Player 2  maffs: %s "), *maths.ToString());
+			colliderSlide(GetActorLocation(), FVector(newLocation.X, newLocation.Y, otherPlayerLocation.Z));
+		}
+		
+	}
 }
 
 void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount)
@@ -168,6 +204,7 @@ void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launc
 	}
 	
 }
+
 
 void AFightingGameCharacter::LightAttack()
 {

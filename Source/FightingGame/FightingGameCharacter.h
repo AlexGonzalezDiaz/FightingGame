@@ -15,13 +15,19 @@ enum class ECharacterState : uint8
 	VE_BackwardInput	UMETA(DisplayName = "BCK_INPUT"),
 	VE_Stunned			UMETA(DisplayName = "STUNNED"),
 	VE_Blocking			UMETA(DisplayName = "BLOCKING"),
-	VE_Launched			UMETA(DisplayName = "LAUNCHED")
+	VE_Launched			UMETA(DisplayName = "LAUNCHED"),
+	VE_Jumping			UMETA(DisplayName = "JUMPING")
 };
 
 UCLASS(config=Game)
 class AFightingGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
+
+protected:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
+	class UKaijuMovementComponent* KaijuMovementComponent;
 
 	///** Camera boom positioning the camera behind the character */
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -30,7 +36,7 @@ class AFightingGameCharacter : public ACharacter
 	///** Follow camera */
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	//class UCameraComponent* FollowCamera;
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -51,7 +57,7 @@ class AFightingGameCharacter : public ACharacter
 	class UInputAction* AttackAction;
 	
 public:
-	AFightingGameCharacter();
+	AFightingGameCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float baseHealth;
@@ -104,6 +110,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void colliderSlide(FVector _start, FVector _end);
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
@@ -167,5 +177,6 @@ protected:
 
 	//Override the ACharacter and APawn functionality to have more control over jumps and landings.
 	virtual void Landed(const FHitResult& Hit) override;
+
 };
 
