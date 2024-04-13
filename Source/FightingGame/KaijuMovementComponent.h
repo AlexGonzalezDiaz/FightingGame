@@ -15,7 +15,6 @@ class FIGHTINGGAME_API UKaijuMovementComponent : public UCharacterMovementCompon
 	GENERATED_BODY()
 protected:
 	virtual void JumpOff(AActor* MovementBaseActor) override;
-	virtual FVector GetSlideDirection(AActor* BaseActor) const;
 
 public:
 	UKaijuMovementComponent();

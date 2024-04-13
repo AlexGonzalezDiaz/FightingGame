@@ -23,12 +23,6 @@ void UKaijuMovementComponent::JumpOff(AActor* MovementBaseActor)
 	}
 }
 
-FVector UKaijuMovementComponent::GetSlideDirection(AActor* BaseActor) const
-{
-
-	return FVector();
-}
-
 UKaijuMovementComponent::UKaijuMovementComponent()
 {
 }

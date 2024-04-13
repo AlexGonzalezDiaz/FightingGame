@@ -113,13 +113,20 @@ void AFightingGameCharacter::BeginPlay()
 
 void AFightingGameCharacter::Landed(const FHitResult& Hit)
 {
+	if (characterState == ECharacterState::VE_Jumping) {
+
+		characterState = ECharacterState::VE_Default;
+	}
+
 	if (characterState == ECharacterState::VE_Launched)
 	{
 
-	    //GetCharacterMovement()->GravityScale = gravityScale;
+	    GetCharacterMovement()->GravityScale = gravityScale;
 		characterState = ECharacterState::VE_Default;
-		UE_LOG(LogTemp, Warning, TEXT("% f"), GetCharacterMovement()->GravityScale);
+		UE_LOG(LogTemp, Warning, TEXT("Character gravity when landed is % f"), GetCharacterMovement()->GravityScale);
 	}
+
+	//This block is used to re-adjust the characters position when landing on the head of the player
 	if (otherPlayer && Hit.GetActor() == otherPlayer)
 	{
 		float offset = 60.0;
@@ -132,27 +139,30 @@ void AFightingGameCharacter::Landed(const FHitResult& Hit)
 		if (hitLocation.Y > otherPlayerLocation.Y )
 		{
 			offset *= 1.0;
-			UE_LOG(LogTemp, Warning, TEXT("Player 1 %s"), *hitLocation.ToString());
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  player 1 Y is further ahead %s"), *otherPlayer->GetActorLocation().ToString());
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  forward vector: %s "), *forwardVector.ToString());
-			FVector maths = forwardVector * offset;
 			FVector newLocation = (forwardVector * offset) + otherPlayer->GetActorLocation();
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  maffs: %s "), *maths.ToString());
 			colliderSlide(GetActorLocation(), FVector(newLocation.X, newLocation.Y, otherPlayerLocation.Z));
 		}
 		else
 		{
 			offset *= -1.0;
-			UE_LOG(LogTemp, Warning, TEXT("Player 1 %s"), *hitLocation.ToString());
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  player 1 Y is behind %s"), *otherPlayer->GetActorLocation().ToString());
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  forward vector: %s "), *forwardVector.ToString());
-			FVector maths = forwardVector * offset;
 			FVector newLocation = (forwardVector * offset) + otherPlayer->GetActorLocation();
-			UE_LOG(LogTemp, Warning, TEXT("Player 2  maffs: %s "), *maths.ToString());
 			colliderSlide(GetActorLocation(), FVector(newLocation.X, newLocation.Y, otherPlayerLocation.Z));
 		}
 		
 	}
+}
+
+void AFightingGameCharacter::Jump()
+{
+	bPressedJump = true;
+	JumpKeyHoldTime = 0.0f;
+	characterState = ECharacterState::VE_Jumping;
+}
+
+void AFightingGameCharacter::StopJumping()
+{
+	bPressedJump = false;
+	ResetJumpState();
 }
 
 void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount)
@@ -185,19 +195,20 @@ void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float
 void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked)
 {
 	FVector launchDirection = otherPlayer->GetActorForwardVector();
-	float launchDirection_X = launchDirection.X * _pushbackAmount; //Consider making a global variable for this, like a general direction & x & y
+	float launchDirection_X = launchDirection.X * _pushbackAmount * 1.2; //Consider making a global variable for this, like a general direction & x & y
 	float launchDirection_Y = launchDirection.Y * _pushbackAmount;
 
 	if (_launchAmount > 0.0f)
 	{
-		//GetCharacterMovement()->GravityScale = gravityScale;
+		GetCharacterMovement()->GravityScale = 0.6;
 		characterState = ECharacterState::VE_Launched;
 		LaunchCharacter(FVector(launchDirection_X, launchDirection_Y, _launchAmount), false, false);
 
-		UE_LOG(LogTemp, Warning, TEXT("Gravity scale before is % f"), GetCharacterMovement()->GravityScale);
+		UE_LOG(LogTemp, Warning, TEXT("Gravity scale launched is %f"), GetCharacterMovement()->GravityScale);
 		_launchAmount = 0.0f;
 
 	}
+
 	else
 	{
 		LaunchCharacter(FVector(launchDirection_X, launchDirection_Y, 0.0f), false, false);
