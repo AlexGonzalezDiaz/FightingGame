@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Runtime/Engine/Classes/Components/StaticMeshComponent.h "
 #include "FightingGameCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -28,6 +29,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
 	class UKaijuMovementComponent* KaijuMovementComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FGCollisions, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* fightingGameBox;
+
 
 	///** Camera boom positioning the camera behind the character */
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -86,6 +91,7 @@ public:
 
 	//The timer handle for all stuns (hitsuns, blockstuns, and stunning attacks)
 	FTimerHandle stunTimerHandle;
+	FTimerHandle TimerHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	AActor* hurtbox;
@@ -109,11 +115,15 @@ public:
 	void dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount);
 
 	UFUNCTION(BlueprintCallable)
+	void CustomLaunchCharacter(FVector _LaunchVelocity, bool _shouldOverrideXY, bool _shouldOverrideZ, bool _shouldIgnoreCharacterCollision = false);
+
+	void IgnorePlayerToPlayerCollision();
+
+	UFUNCTION(BlueprintCallable)
 	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void colliderSlide(FVector _start, FVector _end);
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
@@ -143,6 +153,13 @@ public:
 	bool hasLandedHit;
 
 protected:
+	//Simple Box Array
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collsion Boxes")
+	TArray<UStaticMeshComponent*> simpleBoxCollisions;
+
+	//ForwardVector for movement
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	FVector playerForwardVector;
 
 	// Check for Attacks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
@@ -150,6 +167,20 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool isSideStep;
+
+	//Jumping variables 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	float jumpHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	float jumpDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	int maxJumpCount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
+	int jumpCount;
+
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
