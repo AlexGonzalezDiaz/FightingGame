@@ -46,16 +46,26 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UKaijuMovementComponent>(AChara
 
 	//// Create a camera boom (pulls in towards the player if there is a collision)
 	fightingGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainBox"));
-	fightingGameBox->SetupAttachment(ACharacter::GetMesh());
+	fightingGameBox->SetupAttachment(GetMesh());
 	
+	// Instantiating Class Components
+	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
+	//Attach the Spring Arm to the Character's Skeletal Mesh Component
+	SpringArmComp->SetupAttachment(RootComponent);
 
-	//// Create a follow camera
-	//FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	//FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	// Create a follow camera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	//Attach the Camera to the SpringArmComponent
+	FollowCamera->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
+	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm	
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	//Setting default properties of the SpringArmComp
+	SpringArmComp->bUsePawnControlRotation = false;
+	SpringArmComp->bEnableCameraLag = true;
+	SpringArmComp->TargetArmLength = 300.0f;
+
+	 /*Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
+	 are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)*/
 	
 	//Direction Vector
 	playerForwardVector = GetActorRightVector();
