@@ -47,22 +47,10 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UKaijuMovementComponent>(AChara
 	//// Create a camera boom (pulls in towards the player if there is a collision)
 	fightingGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainBox"));
 	fightingGameBox->SetupAttachment(GetMesh());
+	proximityGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProximityBox"));
+	proximityGameBox->SetupAttachment(GetMesh());
+
 	
-	// Instantiating Class Components
-	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
-	//Attach the Spring Arm to the Character's Skeletal Mesh Component
-	SpringArmComp->SetupAttachment(RootComponent);
-
-	// Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	//Attach the Camera to the SpringArmComponent
-	FollowCamera->AttachToComponent(SpringArmComp, FAttachmentTransformRules::KeepRelativeTransform);
-	//FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm	
-
-	//Setting default properties of the SpringArmComp
-	SpringArmComp->bUsePawnControlRotation = false;
-	SpringArmComp->bEnableCameraLag = true;
-	SpringArmComp->TargetArmLength = 300.0f;
 
 	 /*Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	 are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)*/
@@ -77,6 +65,8 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UKaijuMovementComponent>(AChara
 	characterState = ECharacterState::VE_Default;
 	transform = FTransform();
 	scale = FVector(0.0f, 0.0f, 0.0f);
+	jumpVelocity = FVector(0.0f, 0.0f, 0.0f);
+	previousZJump = 0.0f;
 	baseHealth = 1.00f;
 	wasNormalAttackUsed = false;
 	dmg = 0.0f;
@@ -85,8 +75,9 @@ Super(ObjectInitializer.SetDefaultSubobjectClass<UKaijuMovementComponent>(AChara
 
 	flipInput = 1.0f;
 	canMove = true;
-	gravityScale = GetCharacterMovement()->GravityScale;
+	gravityScale = 1.75;
 	stunTime = 0.0f;
+	hitStopTime = 0.0f;
 	isSideStep = false;
 
 	//Ground Normals and specials
@@ -143,28 +134,22 @@ void AFightingGameCharacter::Landed(const FHitResult& Hit)
 
 	    GetCharacterMovement()->GravityScale = gravityScale;
 		characterState = ECharacterState::VE_Default;
-		UE_LOG(LogTemp, Warning, TEXT("Character gravity when landed is % f"), GetCharacterMovement()->GravityScale);
 	}
 
 	//This block is used to re-adjust the characters position when landing on the head of the player
 	if (otherPlayer && Hit.GetActor() == otherPlayer)
 	{
-		FVector vectorRandom = fightingGameBox->Bounds.BoxExtent;
-		UE_LOG(LogTemp, Warning, TEXT("Landed"));
-		//fightingGameBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		//otherPlayer->fightingGameBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		fightingGameBox->Bounds.BoxExtent.Z;
-		UE_LOG(LogTemp, Warning, TEXT("Boxextent %s"), *vectorRandom.ToString());
-		if (!otherPlayer) {
-			AddActorWorldOffset(vectorRandom);
-		}
+		/*FVector vectorRandom = fightingGameBox->Bounds.BoxExtent;*/
+		/*UE_LOG(LogTemp, Warning, TEXT("Landed"));
+		fightingGameBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		otherPlayer->fightingGameBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);*/
 		
 		//Set Timer doesn't work if the function you are calling has a parameter inside.
-		//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFightingGameCharacter::IgnorePlayerToPlayerCollision, 0.001f, false);
+		/*GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFightingGameCharacter::IgnorePlayerToPlayerCollision, 0.01f, false);*/
 
 		//fightingGameBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		//otherPlayer->fightingGameBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		/*float offset = 60.0;
+		float offset = 60.0;
 		FVector forwardVector = otherPlayer->GetActorForwardVector().GetAbs();
 		FVector otherPlayerLocation = otherPlayer->GetActorLocation();
 		
@@ -182,7 +167,7 @@ void AFightingGameCharacter::Landed(const FHitResult& Hit)
 			offset *= -1.0;
 			FVector newLocation = (forwardVector * offset) + otherPlayer->GetActorLocation();
 			colliderSlide(GetActorLocation(), FVector(newLocation.X, newLocation.Y, otherPlayerLocation.Z));
-		}*/
+		}
 		
 	}
 
@@ -199,7 +184,7 @@ void AFightingGameCharacter::Jump()
 		
 		if (characterState == ECharacterState::VE_ForwardInput)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Jump Forward % s"), *playerForwardVector.ToString());
+			//UE_LOG(LogTemp, Warning, TEXT("Jump Forward % s"), *playerForwardVector.ToString());
 			//Use this method for static distance upon Jump **BEFORE CURVES IMPLEMENTATION
 			//CustomLaunchCharacter(FVector(playerForwardVector.X * jumpDistance, playerForwardVector.Y * jumpDistance, jumpHeight), true, true, false);
 		}
@@ -207,6 +192,7 @@ void AFightingGameCharacter::Jump()
 
 	++jumpCount;
 
+	jumpVelocity = GetVelocity();
 	characterState = ECharacterState::VE_Jumping;
 }
 
@@ -216,7 +202,7 @@ void AFightingGameCharacter::StopJumping()
 	ResetJumpState();
 }
 
-void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount)
+void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _hitStopTime, float _pushbackAmount, float _launchAmount, FVector _hitLocation)
 {
 	baseHealth -= dmgAmount;
 
@@ -232,7 +218,12 @@ void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float
 
 	if (otherPlayer) {
 		otherPlayer->hasLandedHit = true;
-		otherPlayer->performPushback(_pushbackAmount, 0.0f, false);
+		PlayDamageEffects(_hitLocation);
+		if (otherPlayer->characterState == ECharacterState::VE_Jumping) {
+			otherPlayer->BeginHitstop(_hitStopTime);
+		}
+		
+		//otherPlayer->performPushback(_pushbackAmount, 0.0f, false);
 	}
 
 	performPushback(_pushbackAmount, _launchAmount, false);
@@ -241,6 +232,12 @@ void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float
 	{
 		baseHealth = 0.00f;
 	}
+}
+
+void AFightingGameCharacter::SetPreviousVelocity()
+{
+	//jumpVelocity = GetVelocity();
+	//UE_LOG(LogTemp, Warning, TEXT("Stored Velocity p1 %s and get velocity is: %s"), *jumpVelocity.ToString(), *GetVelocity().ToString());
 }
 
 void AFightingGameCharacter::CustomLaunchCharacter(FVector _LaunchVelocity, bool _shouldOverrideXY, bool _shouldOverrideZ, bool _shouldIgnoreCharacterCollision)
@@ -258,10 +255,10 @@ void AFightingGameCharacter::IgnorePlayerToPlayerCollision()
 void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked)
 {
 	FVector launchDirection = otherPlayer->GetActorForwardVector();
-	float launchDirection_X = launchDirection.X * _pushbackAmount * 1.2; //Consider making a global variable for this, like a general direction & x & y
+	float launchDirection_X = launchDirection.X * _pushbackAmount; //Consider making a global variable for this, like a general direction & x & y
 	float launchDirection_Y = launchDirection.Y * _pushbackAmount;
 
-	if (_launchAmount > 0.0f)
+	if (_launchAmount > 0.0f || _launchAmount < 0.0f)
 	{
 		GetCharacterMovement()->GravityScale = 0.6;
 		characterState = ECharacterState::VE_Launched;
@@ -292,38 +289,57 @@ void AFightingGameCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	////Check for roof collisions
-	//if (GetVelocity().Z > 0 ) 
-	//{
-	//	FCollisionQueryParams collisionQuery;
-	//	collisionQuery.AddIgnoredActor(this);
-	//	FCollisionShape capsuleShape = FCollisionShape::MakeCapsule(GetCapsuleComponent()->GetScaledCapsuleRadius(), GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight());
-
-	//	FHitResult roofHitResult;
-	//	bool isblockingHit = GetWorld()->SweepSingleByProfile(roofHitResult,GetActorLocation(), GetVelocity(), GetActorRotation().Quaternion(), GetCapsuleComponent()->GetCollisionProfileName(), capsuleShape, collisionQuery);
-	//	if (isblockingHit)
-	//	{
-	//		AddActorWorldOffset(otherPlayer->GetActorForwardVector());
-	//		UE_LOG(LogTemp, Warning, TEXT("In Here wilding"));
-	//	}
-	//}
 		
 }
 
 void AFightingGameCharacter::BeginStun()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Stun"));
+	
 	canMove = false;
+	//fightingGameBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetWorld()->GetTimerManager().SetTimer(stunTimerHandle, this, &AFightingGameCharacter::EndStun, stunTime, false);
+}
+
+void AFightingGameCharacter::BeginHitstop(float _hitStopTime)
+{
+	previousZJump = GetVelocity().Z;
+
+	if (characterState != ECharacterState::VE_Stunned || characterState != ECharacterState::VE_Launched) {
+		GetCharacterMovement()->GravityScale = 0.0f;
+		GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, 0.0f);
+		otherPlayer->GetCharacterMovement()->GravityScale = 0.0f;
+		otherPlayer->GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, 0.0f);
+	}
+	//(characterState == ECharacterState::VE_Launched || characterState == ECharacterState::VE_Stunned)
+	else {
+		EndHitstop();
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFightingGameCharacter::EndHitstop, _hitStopTime, false);
 }
 
 void AFightingGameCharacter::EndStun()
 {
+	canMove = true;
+	//IgnorePlayerToPlayerCollision();
 	if(characterState != ECharacterState::VE_Launched)
 	{
+		
 		characterState = ECharacterState::VE_Default;
 	}
-	canMove = true;
+}
+
+void AFightingGameCharacter::EndHitstop()
+{
+	
+	if (characterState != ECharacterState::VE_Stunned || characterState != ECharacterState::VE_Launched) {
+		GetCharacterMovement()->GravityScale = gravityScale;
+		GetCharacterMovement()->Velocity = FVector(jumpVelocity.X, jumpVelocity.Y, previousZJump);
+		otherPlayer->GetCharacterMovement()->GravityScale = gravityScale;
+		//otherPlayer->GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, 0.0f);
+		UE_LOG(LogTemp, Warning, TEXT("End Hitstop"));
+
+	}
 }
 	
 

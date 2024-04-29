@@ -60,6 +60,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	float hitStunTime;
 
+	//The amount of distance to launch the player
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
+	float hitStopTime;
+
 	//Check if character was launched already
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hitbox")
 	bool isLaunched;

@@ -33,14 +33,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FGCollisions, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* fightingGameBox;
 
-
-	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
-
-	/**Spring arm for rotation */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	class USpringArmComponent* SpringArmComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FGCollisions, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* proximityGameBox;
 
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -80,12 +74,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	ECharacterState characterState;
 
+	TEnumAsByte<ECharacterState> playerstate;
+	FVector jumpVelocity;
+	float previousZJump;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float flipInput;
 
 	//The amount of time the character will be stunned (hitstun, blockstun, or from a stunning attack)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float stunTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float hitStopTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	bool canMove;
@@ -116,7 +117,9 @@ public:
 	FVector scale;
 
 	UFUNCTION(BlueprintCallable)
-	void dmgAmntCalc(float dmgAmount, float _stunTime, float _pushbackAmount, float _launchAmount);
+	void dmgAmntCalc(float dmgAmount, float _stunTime, float _hitStopTime, float _pushbackAmount, float _launchAmount, FVector _hitLocation);
+
+	void SetPreviousVelocity();
 
 	UFUNCTION(BlueprintCallable)
 	void CustomLaunchCharacter(FVector _LaunchVelocity, bool _shouldOverrideXY, bool _shouldOverrideZ, bool _shouldIgnoreCharacterCollision = false);
@@ -128,6 +131,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void colliderSlide(FVector _start, FVector _end);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayDamageEffects(FVector _hitLocation);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
@@ -201,8 +207,13 @@ protected:
 	//Enter the Stun state
 	void BeginStun();
 
+	//Add hitsop
+	void BeginHitstop(float _hitStopTime);
+
 	//End the Stun state
 	void EndStun();
+
+	void EndHitstop();
 			
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
