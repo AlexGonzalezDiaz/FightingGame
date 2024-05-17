@@ -120,6 +120,9 @@ void AFightingGameCharacter::BeginPlay()
 			}
 		}
 	}
+
+	LockOn();
+	UE_LOG(LogTemp, Warning, TEXT("StartGame"));
 }
 
 void AFightingGameCharacter::Landed(const FHitResult& Hit)
@@ -310,11 +313,10 @@ void AFightingGameCharacter::BeginHitstop(float _hitStopTime)
 		otherPlayer->GetCharacterMovement()->GravityScale = 0.0f;
 		otherPlayer->GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, 0.0f);
 	}
-	//(characterState == ECharacterState::VE_Launched || characterState == ECharacterState::VE_Stunned)
 	else {
 		EndHitstop();
 	}
-
+	//Timer that will call the EndHitstop Function
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFightingGameCharacter::EndHitstop, _hitStopTime, false);
 }
 
@@ -339,6 +341,14 @@ void AFightingGameCharacter::EndHitstop()
 		//otherPlayer->GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, 0.0f);
 		UE_LOG(LogTemp, Warning, TEXT("End Hitstop"));
 
+	}
+}
+
+void AFightingGameCharacter::LockOn()
+{
+	if (otherPlayer != nullptr && this != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("In LockOn(), true"));
 	}
 }
 	

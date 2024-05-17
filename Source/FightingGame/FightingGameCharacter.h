@@ -214,6 +214,9 @@ protected:
 	void EndStun();
 
 	void EndHitstop();
+
+	// Lock on oppponent active character
+	void LockOn();
 			
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
