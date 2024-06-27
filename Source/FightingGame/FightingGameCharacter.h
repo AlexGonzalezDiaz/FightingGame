@@ -4,21 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "main/StateMachineFG.h"
+#include "Main/StateData.h"
 #include "InputActionValue.h"
 #include "Runtime/Engine/Classes/Components/StaticMeshComponent.h "
 #include "FightingGameCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class ECharacterState : uint8
-{
-	VE_Default			UMETA(DisplayName = "NEUTRAL"),
-	VE_ForwardInput		UMETA(DisplayName = "FWD_INPUT"),
-	VE_BackwardInput	UMETA(DisplayName = "BCK_INPUT"),
-	VE_Stunned			UMETA(DisplayName = "STUNNED"),
-	VE_Blocking			UMETA(DisplayName = "BLOCKING"),
-	VE_Launched			UMETA(DisplayName = "LAUNCHED"),
-	VE_Jumping			UMETA(DisplayName = "JUMPING")
-};
 
 UCLASS(config=Game)
 class AFightingGameCharacter : public ACharacter
@@ -26,9 +17,7 @@ class AFightingGameCharacter : public ACharacter
 	GENERATED_BODY()
 
 protected:
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Movement)
-	class UKaijuMovementComponent* KaijuMovementComponent;
+	AFightingGameCharacter();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FGCollisions, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* fightingGameBox;
@@ -60,7 +49,23 @@ protected:
 	class UInputAction* AttackAction;
 	
 public:
-	AFightingGameCharacter(const FObjectInitializer& ObjectInitializer);
+
+	int32 Inputs;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerIndex; //Keep track of which is player 1 and player 2
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UAnimSequenceBase> AnimSequence;
+
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UAnimSequenceBase> BlendAnimSequence;
+
+	UPROPERTY()
+	FStateMachineFG SavedStateMachine; //RecentChange. 
+
+	UPROPERTY(EditDefaultsOnly, Category = "Data Asset")
+	UStateData* DataAsset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float baseHealth;
@@ -71,10 +76,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player References")
 	AFightingGameCharacter* otherPlayer;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	ECharacterState characterState;
+	UState* PlayerStates;
 
-	TEnumAsByte<ECharacterState> playerstate;
+	UPROPERTY(EditAnywhere, Category = "Data")
+	UStateData* PlayerStatesData;
+
 	FVector jumpVelocity;
 	float previousZJump;
 
@@ -91,8 +97,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	bool canMove;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float gravityScale;
 
 	//The timer handle for all stuns (hitsuns, blockstuns, and stunning attacks)
 	FTimerHandle stunTimerHandle;
@@ -169,7 +173,14 @@ protected:
 
 	//ForwardVector for movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	FVector playerForwardVector;
+	FVector Velocity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	int Gravity;
+
+	//Set Height inside state machine
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Movement")
+	int JumpHeight;
 
 	// Check for Attacks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
@@ -178,9 +189,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool isSideStep;
 
-	//Jumping variables 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
-	float jumpHeight;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool isJumping;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float jumpDistance;
@@ -191,9 +202,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	int jumpCount;
 
+	UFUNCTION(BlueprintCallable)
+	bool IsOnGround();
 
 	/** Called for movement input */
-	void Move(const FInputActionValue& Value);
+	void Move(float DeltaTime);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
@@ -226,7 +239,8 @@ protected:
 
 	//Override the ACharacter and APawn functionality to have more control over jumps and landings.
 	virtual void Landed(const FHitResult& Hit) override;
-	virtual void Jump() override;
+
+	/*virtual void Jump() override;*/
 	virtual void StopJumping() override;
 };
 
