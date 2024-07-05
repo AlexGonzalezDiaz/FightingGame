@@ -2,31 +2,52 @@
 
 
 #include "Main/Runners/LocalRunner.h"
+#include "KaijuKolosseumGameState.h"
+#include "Kismet/GameplayStatics.h"
+
+
 
 // Sets default values
 ALocalRunner::ALocalRunner()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = false;
 	//Consider initializing the variables in the constructor instead
 }
 
-// Called every frame
-void ALocalRunner::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-	//Converting the seconds to whole integers
-	AccumulatedTime += FMath::FloorToInt(DeltaTime * 1000);
+//Main point of the class is to run all the float time in fixed frames.
+//Very important for deterministic gameplay. All other functions will be to help out this function
+// *** Gets called in the KaijuKolosseumGameState Tick();
 
-	while (AccumulatedTime >= FixedTimeStep)
+void ALocalRunner::FixedUpdate(float DeltaTime)
+{
+	if (InState)
 	{
-		FixedUpdate();
-		AccumulatedTime -= FixedTimeStep;
+		CurrTime += DeltaTime;
+		while (CurrTime >= OneFrame)
+		{
+			InState->UpdateState();
+			CurrTime -= OneFrame; // Reset the CurrTime to evaluate the next frame.
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("In state not valid"))
 	}
 }
 
-void ALocalRunner::FixedUpdate()
+
+void ALocalRunner::BeginPlay()
 {
+	Super::BeginPlay();
+
+	TArray<AActor*> FoundFighterGameStates;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AKaijuKolosseumGameState::StaticClass(), FoundFighterGameStates);
+	if (FoundFighterGameStates.Num() > 0) {
+		InState = Cast<AKaijuKolosseumGameState>(FoundFighterGameStates[0]);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Instate is: %s"), *InState->GetName());
 }
+
 

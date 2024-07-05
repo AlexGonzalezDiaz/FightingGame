@@ -2,11 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Misc/Bitflags.h"
-//#include "FightingGameCharacter.h"
+#include "StateMachineFG.h"
 #include "State.generated.h"
 
 class AFightingGameCharacter;
-
 UENUM(BlueprintType)
 enum class EEntryReq : uint8
 {
@@ -41,7 +40,7 @@ struct FInputBitmask
 		InputFlag = Input;
 	};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = "EInputFlags"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = "/Script/FightingGame.EInputFlags"))
 	int InputFlag;
 };
 
@@ -68,6 +67,9 @@ public:
 	UPROPERTY(BlueprintReadWrite,EditAnywhere)
 	AFightingGameCharacter* Parent;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FStateMachineFG StateMachine;
+
 	UPROPERTY(EditAnywhere)
 	EEntryReq EntryReq;
 
@@ -77,9 +79,20 @@ public:
 	UPROPERTY(EditAnywhere)
 	EStateType StateType;
 
+	UPROPERTY()
+	bool FinishedState = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool InitState = false;
+
 	UFUNCTION(BlueprintNativeEvent)
 	void Execute();
+
+	UFUNCTION(BlueprintNativeEvent)
+	bool ExitState();
+
 	virtual void Execute_Implementation();
+	virtual bool ExitState_Implementation();
 
 private:
 	void GetName();

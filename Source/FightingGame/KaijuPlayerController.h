@@ -23,6 +23,10 @@ struct FBattleInputActions
 	TObjectPtr<const UInputAction> PressUp;
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<const UInputAction> ReleaseUp;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<const UInputAction> PressForward;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<const UInputAction> ReleaseForward;
 };
 
 UCLASS(Abstract)
@@ -42,11 +46,10 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
-	/** Called for movement input */
-	void HandleMove(const FInputActionValue& Value);
-
 	void PressUp();
 	void ReleaseUp();
+	void PressForward();
+	void ReleaseForward();
 
 private:
 	UPROPERTY()

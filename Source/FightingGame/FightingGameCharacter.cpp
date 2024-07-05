@@ -9,6 +9,8 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "FightingGameGameMode.h"
+#include "Misc/Globals.h"
+#include "KaijuKolosseumGameState.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "KaijuMovementComponent.h"
@@ -28,26 +30,17 @@ AFightingGameCharacter::AFightingGameCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement 
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
-		GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
+	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
 
-		// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
-		// instead of recompiling to adjust them
-		GetCharacterMovement()->JumpZVelocity = 700.f;
-		GetCharacterMovement()->AirControl = 0.35f;
-		GetCharacterMovement()->MaxWalkSpeed = 500.f;
-		GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
-		GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
+	// instead of recompiling to adjust them
+	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
-		UE_LOG(LogTemp, Error, TEXT("CharacterMovement is initialized. JumpZVelocity is : %f"), GetCharacterMovement()->JumpZVelocity);
-
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterMovement is null"));
-	}
 	
 
 	//// Create a camera boom (pulls in towards the player if there is a collision)
@@ -55,13 +48,23 @@ AFightingGameCharacter::AFightingGameCharacter()
 	fightingGameBox->SetupAttachment(GetMesh());
 	proximityGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProximityBox"));
 	proximityGameBox->SetupAttachment(GetMesh());
+	
+	YVec = GetActorForwardVector();
 
 	
 
 	 /*Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	 are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)*/
 	
-
+	//*******CURRENTLY DEVELOPING*********//
+	
+	JumpHeight = 35000;
+	FwlkSpeed = 2000;
+	SpeedX = 0;
+	SpeedY = 0;
+	SpeedZ = 0;
+	Gravity = 1900;
+	//*******CURRENTLY DEVELOPING**********//
 
 	otherPlayer = nullptr;
 	characterMesh = nullptr;
@@ -96,14 +99,65 @@ AFightingGameCharacter::AFightingGameCharacter()
 	wasJumpMediumAttackUsed = false;
 	wasJumpeHeavyAttackUsed = false;
 
-	//JumpVariables
-	JumpHeight = 700;
-	isJumping = false;
-	Gravity = -980;
+
+	isJumping = false; 
 	jumpDistance = 400.0f;
 	maxJumpCount = 2;
 	jumpCount = 0;
 
+}
+void AFightingGameCharacter::Update()
+{
+	SavedStateMachine.Update(Inputs);
+	CharacterState = SavedStateMachine.GetStateNames();
+	bStateComplete = SavedStateMachine.StateComplete;
+	Move();
+}
+
+void AFightingGameCharacter::UpdateVisuals()
+{
+	if (SavedStateMachine.StateStarted)
+	{
+		FVector OffsetLocation = FVector(static_cast<float>(PosX) / COORD_SCALE, static_cast<float>(PosY) / COORD_SCALE, static_cast<float>(PosZ) / COORD_SCALE);	
+		FVector NewLocation = GameState->BattleData.StartLocations[PlayerIndex] + OffsetLocation;
+		if (SpeedZ > 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("On update visuals is : %i"), PosZ);
+			UE_LOG(LogTemp, Warning, TEXT("OffsetLocation is %s"), *OffsetLocation.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("OffsetLocation is %s"), *NewLocation.ToString());
+		}
+		SetActorLocation(NewLocation);
+	}			
+}
+
+void AFightingGameCharacter::Move()
+{
+	// Set SpeedY in blueprints to the JumpHeight. 
+	SpeedY = SpeedY * RateSpeedZ / 100;
+	SpeedZ = SpeedZ * RateSpeedZ / 100;
+
+	//UE_LOG(LogTemp, Warning, TEXT("First PosZ : %i"), PosZ);
+	// Jump updated when speed is first set and keep updating while in the air.
+	if (SpeedZ > 0 || PosZ > GroundLevel)
+	{
+		PosZ += SpeedZ;		
+		//UE_LOG(LogTemp, Warning, TEXT("SpeedZ is : %i"), SpeedZ);
+		//UE_LOG(LogTemp, Warning, TEXT("PosZ added by SpeedZ : %i"), PosZ);
+		if (PosZ > GroundLevel)
+			SpeedZ -= Gravity; //Subtract gravity as long as we are above the ground.
+		else
+		{
+			SpeedZ = 0;
+			PosZ = GroundLevel;
+		}
+	}
+
+	if (SpeedY > 0)
+	{
+		PosY += SpeedY;
+	}
+
+	UpdateVisuals();
 }
 
 void AFightingGameCharacter::BeginPlay()
@@ -125,10 +179,17 @@ void AFightingGameCharacter::BeginPlay()
 	//		}
 	//	}
 	//}
+	PosX = GetActorLocation().X;
+	PosY = GetActorLocation().Y;
+	PosZ = GetActorLocation().Z;
+	UE_LOG(LogTemp, Warning, TEXT("BeginPlay character %i"), PosZ);
+
+	//GameState->BattleData.StartLocations[0].Z = PosZ;
+	//UE_LOG(LogTemp, Warning, TEXT("Before %i"), GameState->BattleData.StartLocations[0].Z); 
+
 	SavedStateMachine.Parent = this;
 	SavedStateMachine.LoadStates(this, DataAsset);
 	LockOn();
-	UE_LOG(LogTemp, Warning, TEXT("StartGame"));
 }
 
 void AFightingGameCharacter::Landed(const FHitResult& Hit)
@@ -284,6 +345,13 @@ void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launc
 	//}
 	
 }
+void AFightingGameCharacter::Tick(float DeltaTime)
+{
+}
+
+
+
+
 
 
 void AFightingGameCharacter::LightAttack()
@@ -294,72 +362,6 @@ void AFightingGameCharacter::SpecialAttack()
 {
 }
 
-void AFightingGameCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	SavedStateMachine.Update(Inputs);
-	// 
-	Move(DeltaTime);
-				
-}
-
-void AFightingGameCharacter::Move(float DeltaTime)
-{
-
-
-	//FVector2D MovementVector = Value.Get<FVector2D>();
-	//const FVector2D directionVector = Value.Get<FVector2d>();
-
-
-	//if (Controller != nullptr)
-	//{
-	//	if (canMove && characterState != ECharacterState::VE_Launched) {
-	//		if (isFlipped) {
-	//			MovementVector = MovementVector * -1.0f;
-	//		}
-	//		// Attempting to get the right button key press and setting our enum value. 
-	//		if (MovementVector.Y > 0.02f)
-	//		{
-	//			characterState = ECharacterState::VE_ForwardInput;
-	//		}
-	//		else if (MovementVector.Y < 0.02f)
-	//		{
-	//			characterState = ECharacterState::VE_BackwardInput;
-	//		}
-	//		else
-	//		{
-	//			characterState = ECharacterState::VE_Default;
-	//		}
-
-	//		// find out which way is forward
-	//		const FRotator Rotation = Controller->GetControlRotation();
-	//		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-	//		// get forward vector
-	//		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	//		// get right vector 
-	//		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	//		// add movement 
-	//		AddMovementInput(ForwardDirection, MovementVector.Y);
-	//		AddMovementInput(RightDirection, MovementVector.X);
-	//	}
-
-	//}
-
-	// Apply gravity
-	Velocity.Z += Gravity * DeltaTime;
-
-	// Update position
-	FVector NewLocation = GetActorLocation() + Velocity * DeltaTime;
-	SetActorLocation(NewLocation, true);
-
-	// Simple ground check (you might want to implement a more robust solution)
-	if (IsOnGround() && Velocity.Z < 0)
-	{
-		Velocity.Z = 0;
-		bWasJumping = false;
-	}
-}
 void AFightingGameCharacter::BeginStun()
 {
 	

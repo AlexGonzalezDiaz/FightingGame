@@ -4,36 +4,43 @@
 #include "Engine/Engine.h"
 
 
-FName FStateMachineFG::GetStateNames()
+EStateFlags FStateMachineFG::GetStateNames()
 {
-	//FGStateMachine->StateNames
-	return {};
+	return KaijuSM.CurrentState;
 }
 
 void FStateMachineFG::Update(int Inputs)
 {
-	if (Inputs != 0)
+	if (KaijuSM.States.Num() != NULL)
 	{
-		if (KaijuSM.States.Num() != NULL)
+		for (int i = 0; i < KaijuSM.States.Num(); i++)
 		{
-			for (int i = 0; i < KaijuSM.States.Num(); i++)
+			if (KaijuSM.InputReq[i] == Inputs && KaijuSM.CurrentState == KaijuSM.StanceReq[i])
 			{
-				if (KaijuSM.InputReq[i] == Inputs)
-				{
-					KaijuSM.CurrentState = KaijuSM.States[i];
-					KaijuSM.States[i]->Parent = Parent;
-					KaijuSM.States[i]->Execute_Implementation();
-				}
-			}
+				Index = i;
+				KaijuSM.States[i]->Parent = Parent;
+				KaijuSM.States[i]->Execute_Implementation();
+				StateStarted = KaijuSM.States[i]->InitState; // Change InitState to true in ExecuteImplementation
+				SetState(KaijuSM.StateType[i]);
+			}		
+		}
 
+		if (StateStarted)
+		{
+			StateComplete = KaijuSM.States[Index]->ExitState_Implementation(); // Change InitState to False
+			if (StateComplete)
+			{   
+				SetState(KaijuSM.ExitType[Index]);
+			}
 		}
 
 	}
 }
 
-void FStateMachineFG::SetState()
+void FStateMachineFG::SetState(EStateFlags NewState)
 {
 	//Set Current state
+	KaijuSM.CurrentState = NewState;
 }
 
 void FStateMachineFG::Initialize()
@@ -44,7 +51,8 @@ void FStateMachineFG::Initialize()
 
 void FStateMachineFG::LoadStates(UObject* Outer, UStateData* DA)
 {
-	KaijuSM.CurrentState = nullptr;
+	SetState(EStateFlags::Idle);
+
 	if (DA)
 	{
 		StatesArray = DA;
@@ -57,13 +65,17 @@ void FStateMachineFG::LoadStates(UObject* Outer, UStateData* DA)
 				if (LoadedObj)
 				{
 					FName NewName = StateData.StateName;
-					int InputFlag = StateData.InputFlag;
+					int InputFlag = StateData.InputFlag; 
+					EStateFlags Type = StateData.StateType;
+					EStateFlags ReqState = StateData.EntryStateType;
+					EStateFlags ExitState = StateData.ExitStateType;
 
-					UE_LOG(LogTemp, Log, TEXT("Found valid state"));
-					//LoadedObj->Parent
-					KaijuSM.States.Add(LoadedObj);
 					KaijuSM.StateNames.Add(NewName);
 					KaijuSM.InputReq.Add(InputFlag);
+					KaijuSM.StateType.Add(Type);
+					KaijuSM.StanceReq.Add(ReqState);
+					KaijuSM.ExitType.Add(ExitState);
+					KaijuSM.States.Add(LoadedObj);
 				}
 				else
 				{

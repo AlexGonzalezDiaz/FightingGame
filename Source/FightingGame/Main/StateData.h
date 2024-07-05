@@ -2,9 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "State.h"
+//#include "State.h"
 #include "Misc/Bitflags.h"
 #include "StateData.generated.h"
+
+class UState;
 
 USTRUCT(BlueprintType)
 struct FStateDataStruct
@@ -17,11 +19,17 @@ struct FStateDataStruct
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = "EInputFlags"))
 	int InputFlag;
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UState> StateInfo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EStateFlags StateType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EStateFlags EntryStateType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EStateFlags ExitStateType;
 
 	UPROPERTY(EditAnywhere)
-	UState* StateBP;
+	TSubclassOf<UState> StateInfo;
 };
 
 UCLASS()

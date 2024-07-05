@@ -36,16 +36,16 @@ void AKaijuPlayerController::SetupInputComponent()
 	}
 
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent);
-
+	//Jump Buttons
 	if (IsValid(InputActions.PressUp))
 		Input->BindAction(InputActions.PressUp.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::PressUp);
 	if (IsValid(InputActions.PressUp))
 		Input->BindAction(InputActions.ReleaseUp.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::ReleaseUp);
-}
-
-void AKaijuPlayerController::HandleMove(const FInputActionValue& Value)
-{
-
+	//Forward Movement
+	if (IsValid(InputActions.PressUp))
+		Input->BindAction(InputActions.PressForward.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::PressForward);
+	if (IsValid(InputActions.PressUp))
+		Input->BindAction(InputActions.ReleaseForward.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::ReleaseForward);
 }
 
 void AKaijuPlayerController::PressUp()
@@ -57,5 +57,16 @@ void AKaijuPlayerController::ReleaseUp()
 {
 	Inputs = Inputs &~ INP_8; //Used for performance, rather than looking at the enum again. Also will leave all other future states unaffected. 
 }
+
+void AKaijuPlayerController::PressForward()
+{
+	Inputs |= INP_6;
+}
+
+void AKaijuPlayerController::ReleaseForward()
+{
+	Inputs = Inputs & ~INP_6; //Used for performance, rather than looking at the enum again. Also will leave all other future states unaffected. 
+}
+
 
 

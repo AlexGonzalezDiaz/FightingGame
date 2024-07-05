@@ -9,11 +9,9 @@
 #include "FightingGameGameMode.h"
 #include "KaijuKolosseumGameState.generated.h"
 
-/**
- * 
- */
 class AFightingGameCharacter;
 constexpr int32 MaxPlayerObjects = 2;
+constexpr float OneFrame = 0.0166666666;
 
 USTRUCT(BlueprintType)
 struct FBattleState
@@ -34,9 +32,10 @@ struct FBattleData
 	UPROPERTY()
 	AFightingGameCharacter* MainPlayer[2];
 
-	TArray <AActor*> playerStartPoints;
-
+	UPROPERTY(EditAnywhere)
 	FVector StartLocations[2];
+
+	TArray <AActor*> playerStartPoints;
 
 };
 
@@ -58,13 +57,24 @@ public:
 	UPROPERTY(BluePrintReadWrite, EditAnywhere)
 	FBattleData BattleData;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FTransform BattlePlayerTransform;
+
 	//Reading Inputs from the controller
 	int GetLocalInputs(int Index) const;
+
+	//Sets the inputs from the player controller to the players
+	void UpdateState(int32 P1Inputs, int32 P2Inputs);
+	//Calling this function from the Local Runner
+	void UpdateState();
 
 protected:
 
 	UPROPERTY()
 	AFightingGameCharacter* Players[MaxPlayerObjects] {};
+
+	UPROPERTY()
+	class ALocalRunner* LocalRunner = nullptr;
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -74,8 +84,7 @@ protected:
 	//Set the players from the player list to be the main characters. 
 	//Finds the PlayerStarts so we can use their location.
 	void FindPlayerStarts();
-	//Sets the inputs from the player controller to the players
-	void UpdateState(int32 P1Inputs, int32 P2Inputs);
+
 
 private:
 };

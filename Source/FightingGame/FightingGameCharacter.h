@@ -10,6 +10,7 @@
 #include "Runtime/Engine/Classes/Components/StaticMeshComponent.h "
 #include "FightingGameCharacter.generated.h"
 
+class AKaijuKolosseumGameState;
 
 UCLASS(config=Game)
 class AFightingGameCharacter : public ACharacter
@@ -50,7 +51,75 @@ protected:
 	
 public:
 
+	//---++       STATEHANDLING     ++---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateMachine")
 	int32 Inputs;
+
+	UPROPERTY(VisibleAnywhere, Category = "State Machine")
+	bool bStateComplete = false;
+
+	UPROPERTY(EditAnywhere)
+	AKaijuKolosseumGameState* GameState;
+
+	UPROPERTY()
+	FStateMachineFG SavedStateMachine; //RecentChange. 
+
+	UPROPERTY(EditDefaultsOnly, Category = "Data Asset")
+	UStateData* DataAsset;
+
+	//---++ STATEHANDLING ++---
+
+
+	//---++       MOVEMENT     ++---
+	UPROPERTY()
+	FVector YVec; //Currently initialized in the constructor
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 PosX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 PosY;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 PosZ;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 SpeedX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 SpeedY;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 SpeedZ;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 RateSpeedX = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 RateSpeedY = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 RateSpeedZ = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 Gravity = 1900;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 GroundLevel;
+
+	//Set Height inside state machine
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 JumpHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	EStateFlags CharacterState;
+
+	//---++       MOVEMENT     ++---
+	//Set Height inside state machine
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom JumpMovement")
+	int32 FwlkSpeed;
+
+
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 PlayerIndex; //Keep track of which is player 1 and player 2
@@ -61,11 +130,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UAnimSequenceBase> BlendAnimSequence;
 
-	UPROPERTY()
-	FStateMachineFG SavedStateMachine; //RecentChange. 
-
-	UPROPERTY(EditDefaultsOnly, Category = "Data Asset")
-	UStateData* DataAsset;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float baseHealth;
@@ -120,28 +185,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Model")
 	FVector scale;
 
-	UFUNCTION(BlueprintCallable)
-	void dmgAmntCalc(float dmgAmount, float _stunTime, float _hitStopTime, float _pushbackAmount, float _launchAmount, FVector _hitLocation);
-
-	void SetPreviousVelocity();
-
-	UFUNCTION(BlueprintCallable)
-	void CustomLaunchCharacter(FVector _LaunchVelocity, bool _shouldOverrideXY, bool _shouldOverrideZ, bool _shouldIgnoreCharacterCollision = false);
-
-	void IgnorePlayerToPlayerCollision();
-
-	UFUNCTION(BlueprintCallable)
-	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void colliderSlide(FVector _start, FVector _end);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void PlayDamageEffects(FVector _hitLocation);
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	float dmg;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool wasLightAttackedUsed;
 
@@ -166,6 +212,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
 	bool hasLandedHit;
 
+	UFUNCTION(BlueprintCallable)
+	void dmgAmntCalc(float dmgAmount, float _stunTime, float _hitStopTime, float _pushbackAmount, float _launchAmount, FVector _hitLocation);
+
+	void SetPreviousVelocity();
+
+	UFUNCTION(BlueprintCallable)
+	void CustomLaunchCharacter(FVector _LaunchVelocity, bool _shouldOverrideXY, bool _shouldOverrideZ, bool _shouldIgnoreCharacterCollision = false);
+
+	void IgnorePlayerToPlayerCollision();
+
+	UFUNCTION(BlueprintCallable)
+	void performPushback(float _pushbackAmount, float _launchAmount, bool _hasBlocked);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void colliderSlide(FVector _start, FVector _end);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayDamageEffects(FVector _hitLocation);
+
+	void Update();
+
+	/** Called for movement input */
+	void Move();
+
+	void UpdateVisuals();
+	/** Updating the state machine using frames instead of tick*/
+
+
 protected:
 	//Simple Box Array
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collsion Boxes")
@@ -175,12 +249,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector Velocity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	int Gravity;
 
-	//Set Height inside state machine
-	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Movement")
-	int JumpHeight;
 
 	// Check for Attacks
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attacks")
@@ -204,9 +273,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsOnGround();
-
-	/** Called for movement input */
-	void Move(float DeltaTime);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);

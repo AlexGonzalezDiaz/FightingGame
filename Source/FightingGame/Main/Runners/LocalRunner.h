@@ -6,9 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "LocalRunner.generated.h"
 
-class AFightingGameCharacter;
-class AFStateMachineFG;
-class AKaijuKolosseumGameState;
 
 UCLASS()
 class FIGHTINGGAME_API ALocalRunner : public AActor
@@ -16,7 +13,9 @@ class FIGHTINGGAME_API ALocalRunner : public AActor
 	GENERATED_BODY()
 	
 protected:
+	virtual void BeginPlay() override;
 
+	float CurrTime = 0;
 
 public:	
 	ALocalRunner();
@@ -24,15 +23,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Fixed Update")
 	int32 FixedTimeStep = 16;
-
-	virtual void Tick(float DeltaTime) override;
+	void FixedUpdate(float DeltaTime);
 
 private:
 
-	void FixedUpdate();
-	int32 AccumulatedTime;
-
-	//Fixed time step required to optimize sending payloads in general.
-	static const int32 FIXED_TIME_STEPS_MS = 16;
-
+	UPROPERTY()
+	class AKaijuKolosseumGameState* InState;
 };
