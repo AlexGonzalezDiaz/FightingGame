@@ -2,32 +2,36 @@
 
 #include "CoreMinimal.h"
 #include "StateData.h"
+#include "Containers/Map.h"
 #include "StateMachineFG.generated.h"
 
 class UState;
 class AFightingGameCharacter;
 
 USTRUCT()
-struct FGameStateMachine
+struct FStateInfo
 {
 	GENERATED_BODY()
-	//A reference to the current state
-	UPROPERTY()
-	//An array of names corresponding to each state used for lookup
-	TArray<FName> StateNames;
-	//Input that is needed to enter the state.
-	TArray<int> InputReq;
-	//Current CharacterState
-	EStateFlags CurrentState;
-	//The type of state that the state BP is.
-	TArray<EStateFlags> StateType;
-	//Required to enter the next state
-	TArray<EStateFlags> StanceReq;
-	//Default Exit state.
-	TArray<EStateFlags> ExitType;
-	//An Array of all available current states
-	TArray<UState*> States;
-		
+
+	UState* State;
+	EStateFlags StateType;
+	EStateFlags StanceReq;
+	EStateFlags ExitType;
+
+	FStateInfo()
+		: State(nullptr)
+		, StateType(EStateFlags::None)
+		, StanceReq(EStateFlags::None)
+		, ExitType(EStateFlags::None)
+	{}
+
+	FStateInfo(UState* InState, EStateFlags InStateType, EStateFlags InStanceReq, EStateFlags InExitType)
+		: State(InState)
+		, StateType(InStateType)
+		, StanceReq(InStanceReq)
+		, ExitType(InExitType)
+	{}
+
 };
 
 USTRUCT(BlueprintType)
@@ -35,8 +39,7 @@ struct FIGHTINGGAME_API FStateMachineFG
 {
 	GENERATED_BODY()
 
-public:
-	EStateFlags GetStateNames();	
+public:	
 	void Update(int Inputs);
 	void SetState(EStateFlags NewState);
 	void Initialize();
@@ -45,19 +48,23 @@ public:
 	UPROPERTY()
 	AFightingGameCharacter* Parent;
 
-	UPROPERTY(VisibleAnywhere)
+	//Current CharacterState, made it EditAnywhere so I can watch in Editor
+	UPROPERTY(EditAnywhere)
+	EStateFlags CurrState;
+
+	//Used to know when a state has started and to continuosly check when the state will exit.
 	bool StateComplete = false;
 	bool StateStarted = false;
 
 protected:
-	int32 Index = 0;
-	
+
+	TArray<FStateInfo> StateInfos;
 
 private:
-	UPROPERTY(Transient)
-	UStateData* StatesArray;
 
-	UPROPERTY(VisibleAnywhere)
-	FGameStateMachine KaijuSM;
+	//Access the DataAsset containing CommmonStates
+	UStateData* StatesArray;
+	//Multimap used in Update(), Key = PlayerInput. 
+	TMultiMap<int32, FStateInfo> StateMap;
 
 };

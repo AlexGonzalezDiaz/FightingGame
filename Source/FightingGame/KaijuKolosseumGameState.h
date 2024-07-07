@@ -51,7 +51,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FBattleState BattleState = FBattleState();
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ACameraActor* CameraActor = nullptr;
 
 	UPROPERTY(BluePrintReadWrite, EditAnywhere)
@@ -62,6 +62,8 @@ public:
 
 	//Reading Inputs from the controller
 	int GetLocalInputs(int Index) const;
+
+	FStateMachineFG StateMachine;
 
 	//Sets the inputs from the player controller to the players
 	void UpdateState(int32 P1Inputs, int32 P2Inputs);
@@ -85,6 +87,7 @@ protected:
 	//Finds the PlayerStarts so we can use their location.
 	void FindPlayerStarts();
 
-
 private:
+
+	int32 PlayerIndex = 0;
 };

@@ -64,7 +64,7 @@ public:
 	UPROPERTY()
 	FStateMachineFG SavedStateMachine; //RecentChange. 
 
-	UPROPERTY(EditDefaultsOnly, Category = "Data Asset")
+	UPROPERTY(EditAnywhere, Category = "Data Asset")
 	UStateData* DataAsset;
 
 	//---++ STATEHANDLING ++---
@@ -306,7 +306,5 @@ protected:
 	//Override the ACharacter and APawn functionality to have more control over jumps and landings.
 	virtual void Landed(const FHitResult& Hit) override;
 
-	/*virtual void Jump() override;*/
-	virtual void StopJumping() override;
 };
 

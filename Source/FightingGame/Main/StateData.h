@@ -17,7 +17,7 @@ struct FStateDataStruct
 	FName StateName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = "EInputFlags"))
-	int InputFlag;
+	int32 InputFlag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EStateFlags StateType;

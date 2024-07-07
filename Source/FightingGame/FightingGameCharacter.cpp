@@ -109,26 +109,10 @@ AFightingGameCharacter::AFightingGameCharacter()
 void AFightingGameCharacter::Update()
 {
 	SavedStateMachine.Update(Inputs);
-	CharacterState = SavedStateMachine.GetStateNames();
-	bStateComplete = SavedStateMachine.StateComplete;
 	Move();
+	CharacterState = SavedStateMachine.CurrState;
 }
 
-void AFightingGameCharacter::UpdateVisuals()
-{
-	if (SavedStateMachine.StateStarted)
-	{
-		FVector OffsetLocation = FVector(static_cast<float>(PosX) / COORD_SCALE, static_cast<float>(PosY) / COORD_SCALE, static_cast<float>(PosZ) / COORD_SCALE);	
-		FVector NewLocation = GameState->BattleData.StartLocations[PlayerIndex] + OffsetLocation;
-		if (SpeedZ > 0)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("On update visuals is : %i"), PosZ);
-			UE_LOG(LogTemp, Warning, TEXT("OffsetLocation is %s"), *OffsetLocation.ToString());
-			UE_LOG(LogTemp, Warning, TEXT("OffsetLocation is %s"), *NewLocation.ToString());
-		}
-		SetActorLocation(NewLocation);
-	}			
-}
 
 void AFightingGameCharacter::Move()
 {
@@ -160,32 +144,24 @@ void AFightingGameCharacter::Move()
 	UpdateVisuals();
 }
 
+void AFightingGameCharacter::UpdateVisuals()
+{
+	if (SavedStateMachine.StateStarted)
+	{
+		FVector OffsetLocation = FVector(static_cast<float>(PosX) / COORD_SCALE, static_cast<float>(PosY) / COORD_SCALE, static_cast<float>(PosZ) / COORD_SCALE);
+		FVector NewLocation = GameState->BattleData.StartLocations[PlayerIndex] + OffsetLocation;
+		SetActorLocation(NewLocation);
+	}
+}
+
 void AFightingGameCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
 
-	//if (auto gameMode = Cast<AFightingGameGameMode>(GetWorld()->GetAuthGameMode()))
-	//{
-	//	if (gameMode->player1 == this)
-	//	{
-	//		//Add Input Mapping Context
-	//		if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	//		{
-	//			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-	//			{
-	//				Subsystem->AddMappingContext(DefaultMappingContext, 0);
-	//			}
-	//		}
-	//	}
-	//}
 	PosX = GetActorLocation().X;
 	PosY = GetActorLocation().Y;
 	PosZ = GetActorLocation().Z;
-	UE_LOG(LogTemp, Warning, TEXT("BeginPlay character %i"), PosZ);
-
-	//GameState->BattleData.StartLocations[0].Z = PosZ;
-	//UE_LOG(LogTemp, Warning, TEXT("Before %i"), GameState->BattleData.StartLocations[0].Z); 
 
 	SavedStateMachine.Parent = this;
 	SavedStateMachine.LoadStates(this, DataAsset);
@@ -245,32 +221,6 @@ void AFightingGameCharacter::Landed(const FHitResult& Hit)
 
 }
 
-//void AFightingGameCharacter::Jump()
-//{
-//	
-//	if (jumpCount < maxJumpCount)
-//	{
-//		ACharacter::Jump();
-//		
-//		if (characterState == ECharacterState::VE_ForwardInput)
-//		{
-//			//UE_LOG(LogTemp, Warning, TEXT("Jump Forward % s"), *playerForwardVector.ToString());
-//			//Use this method for static distance upon Jump **BEFORE CURVES IMPLEMENTATION
-//			//CustomLaunchCharacter(FVector(playerForwardVector.X * jumpDistance, playerForwardVector.Y * jumpDistance, jumpHeight), true, true, false);
-//		}
-//	}
-//
-//	++jumpCount;
-//
-//	jumpVelocity = GetVelocity();
-//	characterState = ECharacterState::VE_Jumping;
-//}
-
-void AFightingGameCharacter::StopJumping()
-{
-	bPressedJump = false;
-	ResetJumpState();
-}
 
 void AFightingGameCharacter::dmgAmntCalc(float dmgAmount, float _stunTime, float _hitStopTime, float _pushbackAmount, float _launchAmount, FVector _hitLocation)
 {
@@ -413,10 +363,6 @@ void AFightingGameCharacter::EndHitstop()
 
 void AFightingGameCharacter::LockOn()
 {
-	if (otherPlayer != nullptr && this != nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("In LockOn(), true"));
-	}
 }
 	
 
