@@ -2,7 +2,7 @@
 
 
 #include "Main/Runners/LocalRunner.h"
-#include "KaijuKolosseumGameState.h"
+#include "Main/KaijuKolosseumGameState.h"
 #include "Kismet/GameplayStatics.h"
 
 

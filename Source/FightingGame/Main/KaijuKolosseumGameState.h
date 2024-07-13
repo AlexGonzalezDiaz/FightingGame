@@ -10,6 +10,7 @@
 #include "KaijuKolosseumGameState.generated.h"
 
 class AFightingGameCharacter;
+class AKaijuPlayerController;
 constexpr int32 MaxPlayerObjects = 2;
 constexpr float OneFrame = 0.0166666666;
 
@@ -47,6 +48,8 @@ class FIGHTINGGAME_API AKaijuKolosseumGameState : public AGameStateBase
 public:
 	//Sets default values for the this actors properties
 	AKaijuKolosseumGameState();
+	UPROPERTY(EditDefaultsOnly, Category = "Player Controller")
+	TSubclassOf<AKaijuPlayerController> PlayerControllerClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FBattleState BattleState = FBattleState();
@@ -78,6 +81,9 @@ protected:
 	UPROPERTY()
 	class ALocalRunner* LocalRunner = nullptr;
 
+	UFUNCTION(BlueprintCallable)
+	void AssignControllers(AFightingGameCharacter* Player);
+
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	
@@ -88,6 +94,5 @@ protected:
 	void FindPlayerStarts();
 
 private:
-
 	int32 PlayerIndex = 0;
 };

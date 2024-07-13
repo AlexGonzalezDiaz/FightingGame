@@ -1,5 +1,5 @@
 #include "Main/StateMachineFG.h"
-#include "FightingGameCharacter.h"
+#include "Gameplay/Actors/FightingGameCharacter.h"
 #include "State.h"
 #include "Engine/Engine.h"
 

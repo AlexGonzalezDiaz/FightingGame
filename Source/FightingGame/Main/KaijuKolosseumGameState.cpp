@@ -2,9 +2,9 @@
 
 #include "KaijuKolosseumGameState.h"
 #include "Misc/Globals.h"
-#include "FightingGameCharacter.h"
+#include "Gameplay/Actors/FightingGameCharacter.h"
 #include "Main/Runners/LocalRunner.h"
-#include "KaijuPlayerController.h"
+#include "Gameplay/KaijuPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
@@ -47,14 +47,17 @@ void AKaijuKolosseumGameState::BeginPlay()
 	FindPlayerStarts();
 
 	//Set up the GameState on the fighting character
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < MaxPlayerObjects; i++)
 	{
 		BattleData.MainPlayer[i]->GameState = this;
 		BattleData.StartLocations[i].Z = Players[i]->PosZ;
 		Players[i]->GroundLevel = Players[i]->PosZ;
+		if ((i+1) < MaxPlayerObjects)
+			AssignControllers(Players[i+1]);
 	}
 	
 }
+
 
 void AKaijuKolosseumGameState::FindPlayerStarts()
 {
@@ -95,15 +98,65 @@ void AKaijuKolosseumGameState::Init()
 
 	for (int i = 0; i < MaxPlayerObjects; i++)
 	{
-		//BattleData.StartLocations[i].Z = 0;
 		Players[i] = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0], BattleData.StartLocations[i], FRotator::ZeroRotator);
 		Players[i]->PlayerIndex = i; //Setting player 1 and 2.
-		//BattleData.StartLocations[i].Z = PlayerTransform.GetLocation().Z;
 	}
 	//Filling out the BattleData
 	BattleData.MainPlayer[0] = Players[0];
 	BattleData.MainPlayer[1] = Players[1];
 
+}
+
+void AKaijuKolosseumGameState::AssignControllers(AFightingGameCharacter* Player)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("World is null in AssignControllers"));
+		return;
+	}
+
+	// Ensure we have a valid PlayerControllerClass
+	if (!PlayerControllerClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerControllerClass is not set. Please set it in the Blueprint."));
+		return;
+	}
+
+	// Spawn the Blueprint version of the player controller
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AKaijuPlayerController* NewController = World->SpawnActor<AKaijuPlayerController>(PlayerControllerClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+
+	if (NewController)
+	{
+		// Create a new ULocalPlayer for this controller
+		UGameInstance* GameInstance = GetGameInstance();
+		if (GameInstance)
+		{
+			FString error;
+			ULocalPlayer* NewLocalPlayer = GameInstance->CreateLocalPlayer(1, error , true);
+			if (NewLocalPlayer)
+			{
+				NewController->SetPlayer(NewLocalPlayer);
+				UE_LOG(LogTemp, Log, TEXT("Created LocalPlayer for Controller ID: %d"), PlayerIndex);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Failed to create LocalPlayer for Controller ID: %d"), PlayerIndex);
+			}
+		}
+
+		// Possess the pawn with the new controller
+		NewController->Possess(Player);
+
+
+		UE_LOG(LogTemp, Log, TEXT("Assigned controller ID %d to player"), PlayerIndex);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn controller"));
+	}
 }
 
 int AKaijuKolosseumGameState::GetLocalInputs(int Index) const
@@ -113,6 +166,16 @@ int AKaijuKolosseumGameState::GetLocalInputs(int Index) const
 	{
 		if (IsValid(Controller))
 		{
+			if (Index == 0)
+			{
+				FString InputsString = FString::Printf(TEXT("%i"), Controller->Inputs);
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, InputsString);
+			}
+			if (Index == 1)
+			{
+				FString InputsString2 = FString::Printf(TEXT("%i"), Controller->Inputs);
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString2);
+			}
 			return Controller->Inputs;
 		}
 	}
@@ -124,16 +187,17 @@ void AKaijuKolosseumGameState::UpdateState()
 {
 	//UpdateLocalInput() to find the inputs of p1 and p2 for future use
 	//UpdateState should just only get the local inputs of p1. 
-	UpdateState(GetLocalInputs(0), 0);
+	UpdateState(GetLocalInputs(0), GetLocalInputs(1));
 }
 
 void AKaijuKolosseumGameState::UpdateState(int32 P1Inputs, int32 P2Inputs)
 {
 	// Passing inputs by frame.
-	BattleData.MainPlayer[0]->Inputs = P1Inputs;
-	//BattleData.MainPlayer[1]->Inputs = P1Inputs;
+	Players[0]->Inputs = P1Inputs;
+	Players[1]->Inputs = P2Inputs;
 	// Updating the player character by frame.
-	BattleData.MainPlayer[0]->Update(); 
+	Players[0]->Update(); 
+	Players[1]->Update();
 }
 
 

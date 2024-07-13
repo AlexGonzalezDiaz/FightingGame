@@ -1,5 +1,5 @@
 #include "Main/State.h"
-#include "FightingGameCharacter.h"
+#include "Gameplay/Actors/FightingGameCharacter.h"
 
 void UState::Execute_Implementation()
 {

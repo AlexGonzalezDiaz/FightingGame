@@ -29,9 +29,12 @@ struct FBattleInputActions
 	TObjectPtr<const UInputAction> ReleaseForward;
 };
 
-UCLASS(Abstract)
+UCLASS()
 class FIGHTINGGAME_API AKaijuPlayerController : public APlayerController
 {	
+
+	GENERATED_BODY()
+
 public:
 	AKaijuPlayerController();
 
@@ -43,9 +46,6 @@ public:
 	int Inputs;
 
 protected:
-
-	virtual void SetupInputComponent() override;
-
 	void PressUp();
 	void ReleaseUp();
 	void PressForward();
@@ -58,5 +58,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<AFightingGameCharacter> PlayerCharacter = nullptr;
 
-	GENERATED_BODY()
+	virtual void SetupInputComponent() override;
+
+	void OnPossess(APawn* InPawn) override;
+
 };

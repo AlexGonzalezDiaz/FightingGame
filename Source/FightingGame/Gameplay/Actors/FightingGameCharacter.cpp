@@ -8,12 +8,11 @@
 #include "Runtime/Engine/Classes/Components/StaticMeshComponent.h "
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "FightingGameGameMode.h"
+#include "Main/FightingGameGameMode.h"
 #include "Misc/Globals.h"
-#include "KaijuKolosseumGameState.h"
+#include "Main/KaijuKolosseumGameState.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
-#include "KaijuMovementComponent.h"
 #include "EnhancedInputSubsystems.h"
 
 //////////////////////////////////////////////////////////////////////////

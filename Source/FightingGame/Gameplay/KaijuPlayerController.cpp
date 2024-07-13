@@ -4,7 +4,7 @@
 #include "KaijuPlayerController.h"
 #include "Misc/Bitflags.h"
 #include "InputMappingContext.h"
-#include "FightingGameCharacter.h"
+#include "Gameplay/Actors/FightingGameCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/InputSettings.h"
@@ -18,13 +18,20 @@ AKaijuPlayerController::AKaijuPlayerController()
 
 void AKaijuPlayerController::SetupInputComponent()
 {
-	if (GetLocalPlayer())
+	// Get the local player
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	int32 ControllerId = LocalPlayer ? LocalPlayer->GetControllerId() : -1;
+
+	UE_LOG(LogTemp, Log, TEXT("SetupInputComponent called for Controller ID: %d"), ControllerId); 
+
+	if (LocalPlayer)
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 		{
 			if (!InputMapping.IsNull())
 			{
 				InputSystem->AddMappingContext(InputMapping.LoadSynchronous(), 0);
+				UE_LOG(LogTemp, Log, TEXT("Added Input Mapping Context for Controller ID: %d"), ControllerId);
 			}
 		}
 	}
@@ -46,6 +53,19 @@ void AKaijuPlayerController::SetupInputComponent()
 		Input->BindAction(InputActions.PressForward.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::PressForward);
 	if (IsValid(InputActions.PressUp))
 		Input->BindAction(InputActions.ReleaseForward.Get(), ETriggerEvent::Triggered, this, &AKaijuPlayerController::ReleaseForward);
+}
+
+void AKaijuPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	int32 ControllerId = LocalPlayer ? LocalPlayer->GetControllerId() : -1;
+
+	UE_LOG(LogTemp, Log, TEXT("Controller %d possessed a pawn"), ControllerId);
+
+	// Set up input component here instead of in BeginPlay
+	SetupInputComponent();
 }
 
 void AKaijuPlayerController::PressUp()
