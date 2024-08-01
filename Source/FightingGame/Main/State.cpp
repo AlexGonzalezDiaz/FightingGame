@@ -1,14 +1,14 @@
 #include "Main/State.h"
 #include "Gameplay/Actors/FightingGameCharacter.h"
 
-void UState::Execute_Implementation()
+void UState::Execute_Implementation() //Used for default implementation for Unreal engine to understand
 {
-	Execute();
+	//InitState = true;
 }
 
 bool UState::ExitState_Implementation()
 {
-	return ExitState();
+	return true;
 }
 
 void UState::GetName()

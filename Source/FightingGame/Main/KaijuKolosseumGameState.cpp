@@ -52,9 +52,9 @@ void AKaijuKolosseumGameState::BeginPlay()
 		BattleData.MainPlayer[i]->GameState = this;
 		BattleData.StartLocations[i].Z = Players[i]->PosZ;
 		Players[i]->GroundLevel = Players[i]->PosZ;
-		if ((i+1) < MaxPlayerObjects)
-			AssignControllers(Players[i+1]);
 	}
+
+	AssignControllers(Players[1]);
 	
 }
 

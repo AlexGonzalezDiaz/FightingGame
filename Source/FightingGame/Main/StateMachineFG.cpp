@@ -43,7 +43,7 @@ void FStateMachineFG::Update(int Inputs)
 				if (CurrState == StateInfo.StanceReq)
 				{
 					StateInfo.State->Parent = Parent;
-					StateInfo.State->Execute_Implementation();
+					StateInfo.State->Execute();
 					StateStarted = StateInfo.State->InitState;
 					SetState(StateInfo.StateType);
 					break;
@@ -58,7 +58,7 @@ void FStateMachineFG::Update(int Inputs)
 
 		if (CurrentStateInfo.State)
 		{
-			StateComplete = CurrentStateInfo.State->ExitState_Implementation();
+			StateComplete = CurrentStateInfo.State->ExitState();
 			if (StateComplete)
 			{
 				SetState(CurrentStateInfo.ExitType);
