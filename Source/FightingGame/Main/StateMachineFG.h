@@ -42,7 +42,6 @@ struct FIGHTINGGAME_API FStateMachineFG
 public:	
 	void Update(int Inputs);
 	void SetState(EStateFlags NewState);
-	void Initialize();
 	void LoadStates(UObject* Outer, UStateData* DA);
 
 	UPROPERTY()

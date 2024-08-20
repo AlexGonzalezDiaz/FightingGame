@@ -72,14 +72,7 @@ void FStateMachineFG::Update(int Inputs)
 
 void FStateMachineFG::SetState(EStateFlags NewState)
 {
-	//Set Current state
 	CurrState = NewState;
-}
-
-void FStateMachineFG::Initialize()
-{
-	//Set the defualt state of the character to idle if no inputs are recieved.
-
 }
 
 

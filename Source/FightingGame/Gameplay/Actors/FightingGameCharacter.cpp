@@ -294,14 +294,10 @@ void AFightingGameCharacter::performPushback(float _pushbackAmount, float _launc
 	//}
 	
 }
+
 void AFightingGameCharacter::Tick(float DeltaTime)
 {
 }
-
-
-
-
-
 
 void AFightingGameCharacter::LightAttack()
 {
