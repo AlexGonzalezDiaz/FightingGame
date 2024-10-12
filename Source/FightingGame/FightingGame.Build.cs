@@ -8,7 +8,19 @@ public class FightingGame : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "GameplayAbilities", "GameplayTags", "GameplayTasks" , "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] 
+		{ "GameplayAbilities", 
+		"GameplayTags", 
+		"GameplayTasks" ,
+		"Core",
+		"CoreUObject",
+		"Engine",
+		"InputCore",
+		"HeadMountedDisplay",
+		"EnhancedInput",
+        "NavigationSystem",
+        "AIModule"
+		});
         PublicIncludePaths.AddRange(new string[] { "FightingGame" });
     }
 }

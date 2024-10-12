@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "KaijuPlayerController.h"
+#include "Gameplay/Controllers/KaijuPlayerController.h"
 #include "Misc/Bitflags.h"
 #include "InputMappingContext.h"
 #include "Gameplay/Actors/FightingGameCharacter.h"
@@ -22,7 +22,7 @@ void AKaijuPlayerController::SetupInputComponent()
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
 	int32 ControllerId = LocalPlayer ? LocalPlayer->GetControllerId() : -1;
 
-	UE_LOG(LogTemp, Log, TEXT("SetupInputComponent called for Controller ID: %d"), ControllerId); 
+	UE_LOG(LogTemp, Log, TEXT("SetupInputComponent called for Kaiju Controller ID: %d"), ControllerId); 
 
 	if (LocalPlayer)
 	{
