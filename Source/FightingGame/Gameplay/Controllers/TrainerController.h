@@ -23,6 +23,9 @@ struct FExploreInputActions
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<const UInputAction> Move;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<const UInputAction> Interact;
 };
 
 UCLASS()
@@ -31,14 +34,17 @@ class FIGHTINGGAME_API ATrainerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TSoftObjectPtr<UInputMappingContext> InputMapping;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	FExploreInputActions InputActions;
+	UPROPERTY(EditAnywhere)
+	bool InteractBtn = false;
 
 protected:
 	void Move(const FInputActionValue& Value);
-	
+	void Interact(const FInputActionValue& Value);
 private:
 	void SetupInputComponent();
 	void OnPossess(APawn* InPawn) override;

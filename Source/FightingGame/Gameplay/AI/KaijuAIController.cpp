@@ -1,6 +1,7 @@
 
 #include "Gameplay/Actors/AICharacter.h"
 #include "Gameplay/AI/KaijuAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 
 AKaijuAIController::AKaijuAIController(FObjectInitializer const& ObjectInitializer)
@@ -21,5 +22,14 @@ void AKaijuAIController::OnPossess(APawn* InPawn)
 			Blackboard = BB;
 			RunBehaviorTree(tree);
 		}
+	}
+}
+
+void AKaijuAIController::OnPlayerPressedInteractButton()
+{
+	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsBool("isButtonPressed", true);
 	}
 }

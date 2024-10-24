@@ -1,11 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "Gameplay/Controllers/TrainerController.h"
+#include "Gameplay/AI/KaijuAIController.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/InputSettings.h"
+#include "EngineUtils.h"
 
 
 void ATrainerController::SetupInputComponent()
@@ -14,8 +15,6 @@ void ATrainerController::SetupInputComponent()
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
 	int32 ControllerId = LocalPlayer ? LocalPlayer->GetControllerId() : -1;
 
-	UE_LOG(LogTemp, Log, TEXT("SetupInputComponent called for Trainer Controller ID: %d"), ControllerId);
-
 	if (LocalPlayer)
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* InputSystem = GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
@@ -23,7 +22,6 @@ void ATrainerController::SetupInputComponent()
 			if (!InputMapping.IsNull())
 			{
 				InputSystem->AddMappingContext(InputMapping.LoadSynchronous(), 0);
-				UE_LOG(LogTemp, Log, TEXT("Added Input Mapping Context for Controller ID: %d"), ControllerId);
 			}
 		}
 	}
@@ -35,9 +33,11 @@ void ATrainerController::SetupInputComponent()
 	}
 
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent);
-	//Jump Buttons
 	if (IsValid(InputActions.Move))
 		Input->BindAction(InputActions.Move.Get(), ETriggerEvent::Triggered, this, &ATrainerController::Move);
+	if (IsValid(InputActions.Interact))
+		Input->BindAction(InputActions.Interact.Get(), ETriggerEvent::Triggered, this, &ATrainerController::Interact);
+
 }
 
 void ATrainerController::OnPossess(APawn* InPawn)
@@ -46,8 +46,6 @@ void ATrainerController::OnPossess(APawn* InPawn)
 
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
 	int32 ControllerId = LocalPlayer ? LocalPlayer->GetControllerId() : -1;
-
-	UE_LOG(LogTemp, Log, TEXT("Controller %d possessed a pawn"), ControllerId);
 
 	// Set up input component here instead of in BeginPlay
 	SetupInputComponent();
@@ -76,5 +74,16 @@ void ATrainerController::Move(const FInputActionValue& Value)
 		
 	}
 
+}
+
+void ATrainerController::Interact(const FInputActionValue& Value)
+{
+	// Notify all AI controllers
+	for (TActorIterator<AKaijuAIController> It(GetWorld()); It; ++It)
+	{
+		AKaijuAIController* AIController = *It;
+		AIController->OnPlayerPressedInteractButton();
+	}
+	
 }
 

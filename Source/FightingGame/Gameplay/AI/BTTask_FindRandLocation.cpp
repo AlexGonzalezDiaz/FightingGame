@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "Gameplay/AI/BTTask_FindRandLocation.h"
 #include "NavigationSystem.h"
@@ -9,6 +7,7 @@
 UBTTask_FindRandLocation::UBTTask_FindRandLocation(FObjectInitializer const& ObjectInitializer)
 {
 	NodeName = "Find Random Location In NavMesh";
+	bNotifyTaskFinished = true;
 }
 
 EBTNodeResult::Type UBTTask_FindRandLocation::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -39,4 +38,9 @@ EBTNodeResult::Type UBTTask_FindRandLocation::ExecuteTask(UBehaviorTreeComponent
 	}
 
 	return EBTNodeResult::Failed;
+}
+
+EBTNodeResult::Type UBTTask_FindRandLocation::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	return EBTNodeResult::Aborted;
 }

@@ -8,6 +8,7 @@
 #include "AICharacter.generated.h"
 
 class ATrainerCharacter;
+class AKaijuAIController;
 
 UCLASS()
 class FIGHTINGGAME_API AAICharacter : public ACharacter
@@ -17,17 +18,20 @@ class FIGHTINGGAME_API AAICharacter : public ACharacter
 public:	
 
 	// Sets default values for this character's properties
-	AAICharacter();
-
-
-	
+	AAICharacter();	
 
 	UFUNCTION()
 	UBehaviorTree* GetBehaviorTree() const;
 
+	UFUNCTION()
+	void UpdateBlackBoard(ATrainerCharacter* Player);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
+	UBehaviorTree* Tree;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class USphereComponent* SphereComp;
@@ -38,7 +42,8 @@ protected:
 	UFUNCTION()
 	void LookAtTarget(ATrainerCharacter* Target);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AI", meta=(AllowPrivateAccess="true"))
-	UBehaviorTree* Tree;
-	
+private:
+	UPROPERTY()
+	AAIController* AIController;
+
 };
