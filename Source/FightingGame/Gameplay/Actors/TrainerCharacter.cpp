@@ -2,10 +2,12 @@
 
 
 #include "Gameplay/Actors/TrainerCharacter.h"
+#include "Gameplay/Actors/AICharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
+
 
 // Sets default values
 ATrainerCharacter::ATrainerCharacter()
@@ -47,4 +49,33 @@ void ATrainerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+void ATrainerCharacter::Update()
+{
+
+	LookAtTarget();
+}
+
+void ATrainerCharacter::LookAtTarget()
+{
+	UE_LOG(LogTemp, Log, TEXT("Calling LookAtTarget"));
+	if (RPGData.WKaiju)
+	{
+		
+		FVector TrainerLocation = RPGData.WKaiju->GetActorLocation();
+		FVector AILocation = GetActorLocation();
+		FVector DirectionVector = (TrainerLocation - AILocation).GetSafeNormal();
+		FRotator NewRotation = FRotationMatrix::MakeFromX(DirectionVector).Rotator();
+
+		SetActorRotation(NewRotation);
+		UE_LOG(LogTemp, Log, TEXT("Looking at target in trainer character"));
+
+	}
+}
+
+void ATrainerCharacter::SetRPGData(const FRPGData& NewRPGData)
+{
+	RPGData = NewRPGData;
+}
+
 

@@ -1,6 +1,6 @@
 
 #include "Gameplay/Controllers/TrainerController.h"
-#include "Gameplay/AI/KaijuAIController.h"
+#include "Gameplay/Controllers/KaijuAIController.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"

@@ -4,9 +4,11 @@
 #include "Misc/Globals.h"
 #include "Gameplay/Actors/FightingGameCharacter.h"
 #include "Gameplay/Actors/TrainerCharacter.h"
+#include "Gameplay/Actors/AICharacter.h"
 #include "Main/Runners/LocalRunner.h"
 #include "Gameplay/Controllers/KaijuPlayerController.h"
 #include "Gameplay/Controllers/TrainerController.h"
+#include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
@@ -16,6 +18,7 @@
 AKaijuKolosseumGameState::AKaijuKolosseumGameState()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	CurrentGameState = EGameState::Overworld;
 }
 
 void AKaijuKolosseumGameState::Tick(float DeltaTime)
@@ -29,25 +32,29 @@ void AKaijuKolosseumGameState::BeginPlay()
 	Super::BeginPlay();
 	
 	// LOCAL RUNNER
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	LocalRunner = GetWorld()->SpawnActor<ALocalRunner>(ALocalRunner::StaticClass(), SpawnParams);
 
-	//Spawn the tamer character
-	RPGPlayer = GetWorld()->SpawnActor<ATrainerCharacter>(RPGData.Trainer, FVector(960.0,900.0, 0.0), FRotator::ZeroRotator);
-	
 	// CAMERA
 	CameraActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass());
 	CameraActor->GetCameraComponent()->SetFieldOfView(54);
-	const FVector NewCameraLocation = BattlePlayerTransform.GetRotation().RotateVector(FVector(200, 1080, 50)) + BattlePlayerTransform.GetLocation();
-	CameraActor->SetActorLocation(NewCameraLocation);
-	if (CameraActor)
+
+	//Spawn the tamer character
+	RPGPlayer = GetWorld()->SpawnActor<ATrainerCharacter>(RPGData.TrainerBP, FVector(960.0,900.0, 0.0), FRotator::ZeroRotator);
+	RPGData.Trainer = RPGPlayer;
+	UpdateCamera(GetGameState(), RPGData.Trainer);
+
+	//Spawn the wild Kaiju
+	
+
+	/*if (const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); IsValid(PlayerController))
 	{
-		if (const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); IsValid(PlayerController))
-		{
+		if(GetGameState() == EGameState::Overworld)
 			PlayerController->SetViewTargetWithBlend(RPGPlayer);
-		}
-	}
+	}*/
+
 	
 	//FindPlayerStarts();
 
@@ -61,6 +68,9 @@ void AKaijuKolosseumGameState::BeginPlay()
 
 	//AssignControllers(Players[1]);
 	AssignControllers(nullptr,RPGPlayer);
+
+	//Spawn the Kaiju
+	SpawnAIKaiju();
 	
 }
 
@@ -211,33 +221,120 @@ int AKaijuKolosseumGameState::GetLocalInputs(int Index) const
 
 void AKaijuKolosseumGameState::UpdateState()
 {
+	if (CurrentGameState == EGameState::Battle)
+	{
+		RPGData.WKaiju->Update();
+		RPGPlayer->Update();
+	}
 	//UpdateLocalInput() to find the inputs of p1 and p2 for future use
 	//UpdateState should just only get the local inputs of p1. 
 	//UpdateState(GetLocalInputs(0), GetLocalInputs(1));
 }
 
+void AKaijuKolosseumGameState::UpdateCamera(EGameState CurrState, ATrainerCharacter* Player)
+{
+	
+
+	if (const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); IsValid(PlayerController))
+	{
+		FString InputsString1 = FString::Printf(TEXT("Exploring time"));
+		FString InputsString2 = FString::Printf(TEXT("Battle time"));
+		if (GetGameState() == EGameState::Overworld)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString1);
+			PlayerController->SetViewTargetWithBlend(Player, 0.5f);
+		}	
+		else if (GetGameState() == EGameState::Battle)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString2);
+			FVector TrainerLocation = RPGData.Trainer->GetActorLocation();
+			FVector TrainerRightVector = RPGData.Trainer->GetActorRightVector();
+			FVector WKaijuLocation = RPGData.WKaiju->GetActorLocation();
+			FVector NewCamVector = (TrainerLocation + WKaijuLocation) / 2 + (TrainerRightVector * 1000.f);
+
+			const FVector NewCameraLocation = BattlePlayerTransform.GetRotation().RotateVector(NewCamVector + BattlePlayerTransform.GetLocation());
+			CameraActor->SetActorLocation(NewCameraLocation);
+			PlayerController->SetViewTargetWithBlend(CameraActor, 0.5f);
+		}
+		else
+		{
+			return;
+		}
+			
+	}
+
+}
+
 
 void AKaijuKolosseumGameState::UpdateState(int32 P1Inputs, int32 P2Inputs)
 {
+	UpdateCamera(GetGameState(), RPGData.Trainer);
 	// Passing inputs by frame.
 	Players[0]->Inputs = P1Inputs;
 	Players[1]->Inputs = P2Inputs;
 	// Updating the player character by frame.
 	Players[0]->Update(); 
 	Players[1]->Update();
+	RPGData.WKaiju->Update();
+	RPGPlayer->Update();
 }
 
-void AKaijuKolosseumGameState::SwitchGameState(EGameState NewState)
+void AKaijuKolosseumGameState::SetGameState(EGameState NewState)
 {
-	if (NewState == EGameState::Battle)
+	CurrentGameState = NewState;
+	UpdateCamera(NewState, RPGData.Trainer);
+}
+
+EGameState AKaijuKolosseumGameState::GetGameState()
+{
+	return CurrentGameState;
+}
+
+void AKaijuKolosseumGameState::SpawnAIKaiju()
+{
+	if (!RPGData.WKaijuBP)
 	{
-
+		UE_LOG(LogTemp, Warning, TEXT("AICharacterClass is not set in GameState"));
+		return;
 	}
-	else if (NewState == EGameState::Overworld)
+
+	UWorld* World = GetWorld();
+	if (!World)
 	{
-
+		return;
 	}
 
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(World, 0);
+	if (!PlayerController)
+	{
+		return;
+	}
+
+	FVector PlayerLocation = PlayerController->GetPawn()->GetActorLocation();
+
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(World);
+	if (!NavSystem)
+	{
+		return;
+	}
+
+	FNavLocation RandomLocation;
+	if (NavSystem->GetRandomReachablePointInRadius(PlayerLocation, SpawnRadius, RandomLocation))
+	{
+		FVector SpawnLocation = RandomLocation.Location;
+		FRotator SpawnRotation = FRotator::ZeroRotator;
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AAICharacter* SpawnedKaiju = World->SpawnActor<AAICharacter>(RPGData.WKaijuBP, SpawnLocation, SpawnRotation, SpawnParams);
+		if (SpawnedKaiju)
+		{
+			RPGData.WKaiju = SpawnedKaiju;
+			UE_LOG(LogTemp, Log, TEXT("AI Character spawned at %s"), *SpawnLocation.ToString());
+		}
+	}
+	RPGData.Trainer->SetRPGData(RPGData);
 }
 
 

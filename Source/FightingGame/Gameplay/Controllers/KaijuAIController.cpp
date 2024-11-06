@@ -1,6 +1,6 @@
 
 #include "Gameplay/Actors/AICharacter.h"
-#include "Gameplay/AI/KaijuAIController.h"
+#include "Gameplay/Controllers/KaijuAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 

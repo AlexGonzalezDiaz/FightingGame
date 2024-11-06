@@ -11,6 +11,7 @@
 
 class AFightingGameCharacter;
 class ATrainerCharacter;
+class AAICharacter;
 class AKaijuPlayerController;
 class ATrainerController;
 constexpr int32 MaxPlayerObjects = 2;
@@ -48,7 +49,16 @@ struct FRPGData
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TSubclassOf<ATrainerCharacter> Trainer;
+	TSubclassOf<ATrainerCharacter> TrainerBP;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<AAICharacter> WKaijuBP;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ATrainerCharacter* Trainer;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	AAICharacter* WKaiju;
 
 	//Variable for previous save spot starting location
 
@@ -94,19 +104,29 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FTransform BattlePlayerTransform;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game State")
+	EGameState CurrentGameState;
+
 	//Reading Inputs from the controller
 	int GetLocalInputs(int Index) const;
 
 	FStateMachineFG StateMachine;
-
-	EGameState CurrGameState;
 
 	//Sets the inputs from the player controller to the players
 	void UpdateState(int32 P1Inputs, int32 P2Inputs);
 	//Calling this function from the Local Runner
 	void UpdateState();
 
-	void SwitchGameState(EGameState NewState);
+	void SetGameState(EGameState NewState);
+
+	void UpdateCamera(EGameState CurrState, ATrainerCharacter* Player);
+	EGameState GetGameState();
+
+	//Spawning the AI characters randomly on the map. 
+	UPROPERTY(EditDefaultsOnly, Category = "AI Spawning")
+	float SpawnRadius = 1000.0f;
+
+	void SpawnAIKaiju();
 
 protected:
 
@@ -131,7 +151,8 @@ protected:
 	//Finds the PlayerStarts so we can use their location.
 	void FindPlayerStarts();
 
-
 private:
 	int32 PlayerIndex = 0;
+
+	
 };

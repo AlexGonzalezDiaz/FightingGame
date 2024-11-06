@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/Tasks/BTTask_BlackboardBase.h"
-#include "BTTask_LookAtPlayer.generated.h"
+#include "BTTask_SpawnPlayerKaiju.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FIGHTINGGAME_API UBTTask_LookAtPlayer : public UBTTask_BlackboardBase
+class FIGHTINGGAME_API UBTTask_SpawnPlayerKaiju : public UBTTask_BlackboardBase
 {
 	GENERATED_BODY()
 	

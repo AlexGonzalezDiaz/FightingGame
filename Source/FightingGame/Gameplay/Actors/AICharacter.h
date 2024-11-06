@@ -9,6 +9,7 @@
 
 class ATrainerCharacter;
 class AKaijuAIController;
+class AKaijuKolosseumGameState;
 
 UCLASS()
 class FIGHTINGGAME_API AAICharacter : public ACharacter
@@ -20,11 +21,20 @@ public:
 	// Sets default values for this character's properties
 	AAICharacter();	
 
+	UPROPERTY(EditAnywhere)
+	AKaijuKolosseumGameState* GameState;
+
+	UPROPERTY(EditAnywhere)
+	ATrainerCharacter* TrainerChar;
+
 	UFUNCTION()
 	UBehaviorTree* GetBehaviorTree() const;
 
 	UFUNCTION()
 	void UpdateBlackBoard(ATrainerCharacter* Player);
+
+	UFUNCTION()
+	void Update();
 
 protected:
 	// Called when the game starts or when spawned

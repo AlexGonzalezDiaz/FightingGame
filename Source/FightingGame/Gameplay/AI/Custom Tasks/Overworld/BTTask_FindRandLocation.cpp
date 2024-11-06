@@ -1,8 +1,8 @@
 
-#include "Gameplay/AI/BTTask_FindRandLocation.h"
+#include "Gameplay/AI/Custom Tasks/Overworld/BTTask_FindRandLocation.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Gameplay/AI/KaijuAIController.h"
+#include "Gameplay/Controllers/KaijuAIController.h"
 
 UBTTask_FindRandLocation::UBTTask_FindRandLocation(FObjectInitializer const& ObjectInitializer)
 {

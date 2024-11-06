@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Main/KaijuKolosseumGameState.h"
 #include "TrainerCharacter.generated.h"
+
+class AAICharacter;
 
 UCLASS()
 class FIGHTINGGAME_API ATrainerCharacter : public ACharacter
@@ -24,6 +27,19 @@ public:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
 	class USphereComponent* SphereComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RPG Data")
+	FRPGData RPGData;
+
+	UFUNCTION(BlueprintCallable, Category = "RPG Data")
+	void SetRPGData(const FRPGData& NewRPGData);
+
+	UFUNCTION()
+	void Update();
+
+	UFUNCTION()
+	void LookAtTarget();
+
 
 protected:
 	// Called when the game starts or when spawned
