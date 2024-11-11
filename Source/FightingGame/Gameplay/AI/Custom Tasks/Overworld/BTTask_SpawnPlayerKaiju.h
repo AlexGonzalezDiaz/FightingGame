@@ -13,5 +13,16 @@ UCLASS()
 class FIGHTINGGAME_API UBTTask_SpawnPlayerKaiju : public UBTTask_BlackboardBase
 {
 	GENERATED_BODY()
-	
+
+public:
+	explicit UBTTask_SpawnPlayerKaiju(FObjectInitializer const& ObjectInitializer);
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	FBlackboardKeySelector SpawnPartnerKey;
+private:
+	UPROPERTY(EditAnywhere, Category = "Spawn")
+	int SpawnDistance = 200;
+
 };

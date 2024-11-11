@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Character.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "AICharacter.generated.h"
@@ -40,6 +41,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void Tick(float DeltaTime) override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	UBehaviorTree* Tree;
 
@@ -50,7 +53,7 @@ protected:
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void LookAtTarget(ATrainerCharacter* Target);
+	void LookAtTarget();
 
 private:
 	UPROPERTY()

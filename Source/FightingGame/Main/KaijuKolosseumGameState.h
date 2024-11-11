@@ -58,6 +58,9 @@ struct FRPGData
 	ATrainerCharacter* Trainer;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	AFightingGameCharacter* PartnerKaiju;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	AAICharacter* WKaiju;
 
 	//Variable for previous save spot starting location
@@ -127,6 +130,8 @@ public:
 	float SpawnRadius = 1000.0f;
 
 	void SpawnAIKaiju();
+
+	void SpawnPartner(int Distance);
 
 protected:
 

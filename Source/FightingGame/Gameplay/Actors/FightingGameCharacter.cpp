@@ -11,6 +11,7 @@
 #include "Main/FightingGameGameMode.h"
 #include "Misc/Globals.h"
 #include "Main/KaijuKolosseumGameState.h"
+#include "Gameplay/Actors/AICharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -107,9 +108,11 @@ AFightingGameCharacter::AFightingGameCharacter()
 }
 void AFightingGameCharacter::Update()
 {
-	SavedStateMachine.Update(Inputs);
+	/*SavedStateMachine.Update(Inputs);
 	Move();
-	CharacterState = SavedStateMachine.CurrState;
+	CharacterState = SavedStateMachine.CurrState;*/
+	LookAtTarget();
+
 }
 
 
@@ -164,7 +167,6 @@ void AFightingGameCharacter::BeginPlay()
 
 	SavedStateMachine.Parent = this;
 	SavedStateMachine.LoadStates(this, DataAsset);
-	LockOn();
 }
 
 void AFightingGameCharacter::Landed(const FHitResult& Hit)
@@ -356,8 +358,20 @@ void AFightingGameCharacter::EndHitstop()
 	//}
 }
 
-void AFightingGameCharacter::LockOn()
+void AFightingGameCharacter::LookAtTarget()
 {
+	if (GameState)
+	{
+		if (GameState->CurrentGameState == EGameState::Battle && GameState->RPGData.WKaiju)
+		{
+
+			bUseControllerRotationYaw = true;
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), GameState->RPGData.WKaiju->GetActorLocation());
+			GetController()->SetControlRotation(LookAtRotation);
+
+		}
+	}
 }
 	
 

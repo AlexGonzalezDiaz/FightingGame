@@ -10,6 +10,7 @@
 #include "Gameplay/Controllers/TrainerController.h"
 #include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "EngineUtils.h"
@@ -45,15 +46,6 @@ void AKaijuKolosseumGameState::BeginPlay()
 	RPGPlayer = GetWorld()->SpawnActor<ATrainerCharacter>(RPGData.TrainerBP, FVector(960.0,900.0, 0.0), FRotator::ZeroRotator);
 	RPGData.Trainer = RPGPlayer;
 	UpdateCamera(GetGameState(), RPGData.Trainer);
-
-	//Spawn the wild Kaiju
-	
-
-	/*if (const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); IsValid(PlayerController))
-	{
-		if(GetGameState() == EGameState::Overworld)
-			PlayerController->SetViewTargetWithBlend(RPGPlayer);
-	}*/
 
 	
 	//FindPlayerStarts();
@@ -136,11 +128,17 @@ void AKaijuKolosseumGameState::AssignControllers(AFightingGameCharacter* Player,
 	APlayerController* ExistingController = UGameplayStatics::GetPlayerController(World, 0);
 	ATrainerController* TrainerController = Cast<ATrainerController>(ExistingController);
 
-	if (TrainerController)
+	if (CurrentGameState==EGameState::Overworld && TrainerController)
 	{
 		// Possess the trainer character with the existing controller
 		TrainerController->Possess(Trainer);
 		UE_LOG(LogTemp, Log, TEXT("Assigned existing controller ID %s to trainer"), *TrainerController->GetName());
+	}
+	else if(CurrentGameState == EGameState::Battle && Player && TrainerController)
+	{
+		TrainerController->UnPossess();
+		TrainerController->Possess(Player);
+		//UE_LOG(LogTemp, Log, TEXT("Assigned existing controller ID %s to trainer"), *TrainerController->GetOwner());
 	}
 	else
 	{
@@ -221,10 +219,11 @@ int AKaijuKolosseumGameState::GetLocalInputs(int Index) const
 
 void AKaijuKolosseumGameState::UpdateState()
 {
-	if (CurrentGameState == EGameState::Battle)
+	if (CurrentGameState == EGameState::Battle && RPGData.PartnerKaiju)
 	{
 		RPGData.WKaiju->Update();
-		RPGPlayer->Update();
+		RPGData.PartnerKaiju->Update();
+		UpdateCamera(CurrentGameState, nullptr);
 	}
 	//UpdateLocalInput() to find the inputs of p1 and p2 for future use
 	//UpdateState should just only get the local inputs of p1. 
@@ -233,36 +232,74 @@ void AKaijuKolosseumGameState::UpdateState()
 
 void AKaijuKolosseumGameState::UpdateCamera(EGameState CurrState, ATrainerCharacter* Player)
 {
-	
-
 	if (const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0); IsValid(PlayerController))
 	{
-		FString InputsString1 = FString::Printf(TEXT("Exploring time"));
-		FString InputsString2 = FString::Printf(TEXT("Battle time"));
-		if (GetGameState() == EGameState::Overworld)
+		// Need to have the trainer character first to find the midpoint between the kaiju and the player.
+		// Make a condition to track when the other kaiju has spawned to then update the camera again.
+		// The camera will then just slowly move to in between the wild kaiju and the possessed kaiju
+		if (GetGameState() == EGameState::Battle && RPGData.PartnerKaiju && RPGData.WKaiju)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString1);
-			PlayerController->SetViewTargetWithBlend(Player, 0.5f);
-		}	
-		else if (GetGameState() == EGameState::Battle)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString2);
-			FVector TrainerLocation = RPGData.Trainer->GetActorLocation();
-			FVector TrainerRightVector = RPGData.Trainer->GetActorRightVector();
+			// Get positions of both actors
+			FVector PartnerLocation = RPGData.PartnerKaiju->GetActorLocation();
 			FVector WKaijuLocation = RPGData.WKaiju->GetActorLocation();
-			FVector NewCamVector = (TrainerLocation + WKaijuLocation) / 2 + (TrainerRightVector * 1000.f);
 
-			const FVector NewCameraLocation = BattlePlayerTransform.GetRotation().RotateVector(NewCamVector + BattlePlayerTransform.GetLocation());
-			CameraActor->SetActorLocation(NewCameraLocation);
+			// Calculate midpoint
+			FVector Midpoint = (PartnerLocation + WKaijuLocation) * 0.5f;
+
+			// Get forward vectors
+			FVector TrainerForward = RPGData.PartnerKaiju->GetActorForwardVector();
+			FVector WKaijuForward = RPGData.WKaiju->GetActorForwardVector();
+
+			// Calculate a vector perpendicular to the line between the actors
+			FVector BetweenActors = WKaijuLocation - PartnerLocation;
+			FVector PerpendicularVector = FVector::CrossProduct(BetweenActors, FVector::UpVector).GetSafeNormal();
+
+			// Calculate camera position
+			float CameraDistance = 800.0f; // Adjust this value to change how far back the camera is
+			FVector CameraLocation = Midpoint + PerpendicularVector * CameraDistance;
+
+			// Set camera location and rotation
+			CameraActor->SetActorLocation(CameraLocation);
+			FRotator NewRotation = (Midpoint - CameraLocation).Rotation();
+			CameraActor->SetActorRotation(NewRotation);
+
+			// Blend to the new camera view
+			PlayerController->SetViewTargetWithBlend(CameraActor);
+		}
+		else if (GetGameState() == EGameState::Battle && Player && RPGData.WKaiju)
+		{
+			// Get positions of both actors
+			FVector TrainerLocation = Player->GetActorLocation();
+				FVector WKaijuLocation = RPGData.WKaiju->GetActorLocation();
+
+				// Calculate midpoint
+				FVector Midpoint = (TrainerLocation + WKaijuLocation) * 0.5f;
+
+				// Get forward vectors
+				FVector TrainerForward = Player->GetActorForwardVector();
+				FVector WKaijuForward = RPGData.WKaiju->GetActorForwardVector();
+
+			// Calculate a vector perpendicular to the line between the actors
+			FVector BetweenActors = WKaijuLocation - TrainerLocation;
+			FVector PerpendicularVector = FVector::CrossProduct(BetweenActors, FVector::UpVector).GetSafeNormal();
+
+			// Calculate camera position
+			float CameraDistance = 800.0f; // Adjust this value to change how far back the camera is
+			FVector CameraLocation = Midpoint + PerpendicularVector * CameraDistance;
+
+			// Set camera location and rotation
+			CameraActor->SetActorLocation(CameraLocation);
+			FRotator NewRotation = (Midpoint - CameraLocation).Rotation();
+			CameraActor->SetActorRotation(NewRotation);
+
+			// Blend to the new camera view
 			PlayerController->SetViewTargetWithBlend(CameraActor, 0.5f);
 		}
-		else
+		else if (GetGameState() == EGameState::Overworld)
 		{
-			return;
+			PlayerController->SetViewTargetWithBlend(Player, 0.5f);
 		}
-			
 	}
-
 }
 
 
@@ -275,8 +312,8 @@ void AKaijuKolosseumGameState::UpdateState(int32 P1Inputs, int32 P2Inputs)
 	// Updating the player character by frame.
 	Players[0]->Update(); 
 	Players[1]->Update();
-	RPGData.WKaiju->Update();
-	RPGPlayer->Update();
+	//RPGData.WKaiju->Update();
+	//RPGPlayer->Update();
 }
 
 void AKaijuKolosseumGameState::SetGameState(EGameState NewState)
@@ -327,7 +364,7 @@ void AKaijuKolosseumGameState::SpawnAIKaiju()
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-		AAICharacter* SpawnedKaiju = World->SpawnActor<AAICharacter>(RPGData.WKaijuBP, SpawnLocation, SpawnRotation, SpawnParams);
+		AAICharacter* SpawnedKaiju = World->SpawnActor<AAICharacter>(RPGData.WKaijuBP, FVector(SpawnLocation.X, SpawnLocation.Y, 0), SpawnRotation, SpawnParams);
 		if (SpawnedKaiju)
 		{
 			RPGData.WKaiju = SpawnedKaiju;
@@ -335,6 +372,20 @@ void AKaijuKolosseumGameState::SpawnAIKaiju()
 		}
 	}
 	RPGData.Trainer->SetRPGData(RPGData);
+}
+
+void AKaijuKolosseumGameState::SpawnPartner(int Distance)
+{
+	if (RPGData.Trainer)
+	{
+		FVector NewLocation = RPGData.Trainer->GetActorLocation() + (RPGData.Trainer->GetActorForwardVector() * Distance);
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(NewLocation, RPGData.WKaiju->GetActorLocation());
+
+		AFightingGameCharacter* SpawnedKaiju = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0], FVector(NewLocation.X,NewLocation.Y,0), LookAtRotation);
+		RPGData.PartnerKaiju = SpawnedKaiju;
+		AssignControllers(SpawnedKaiju, RPGPlayer);
+
+	}
 }
 
 

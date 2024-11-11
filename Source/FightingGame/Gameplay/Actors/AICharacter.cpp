@@ -8,6 +8,7 @@
 #include "Components/SphereComponent.h"
 #include "Gameplay/Controllers/KaijuAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AAICharacter::AAICharacter()
@@ -24,6 +25,7 @@ AAICharacter::AAICharacter()
 
 }
 
+
 // Called when the game starts or when spawned
 void AAICharacter::BeginPlay()
 {
@@ -38,6 +40,14 @@ void AAICharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("Failed to get GameState in BeginPlay."));
 }
 
+void AAICharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	LookAtTarget();
+
+}
+
 void AAICharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	TrainerChar = Cast<ATrainerCharacter>(OtherActor);
@@ -46,7 +56,6 @@ void AAICharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		//Lock onto the trainer
 		FString ActorName = OtherActor->GetName();
-		FString Message = FString::Printf(TEXT("Overlapped with: %s"), *ActorName);
 
 
 		UpdateBlackBoard(TrainerChar);
@@ -63,7 +72,7 @@ void AAICharacter::UpdateBlackBoard(ATrainerCharacter* Player)
 		{
 			BBComp->SetValueAsObject("TrainerCharacter", Player);
 			BBComp->SetValueAsBool("IsPlayerInRange", true);
-			UE_LOG(LogTemp, Warning, TEXT("BB updated with player!"));
+			//UE_LOG(LogTemp, Warning, TEXT("BB updated with player!"));
 		}
 	}
 
@@ -71,32 +80,29 @@ void AAICharacter::UpdateBlackBoard(ATrainerCharacter* Player)
 
 void AAICharacter::Update()
 {
-	if (GameState)
-	{
-		if (GameState->GetGameState() == EGameState::Battle)
-			LookAtTarget(TrainerChar);
-	}
-		
+	//LookAtTarget();		
 }
 
-void AAICharacter::LookAtTarget(ATrainerCharacter* NewTarget)
+void AAICharacter::LookAtTarget()
 {
-	if (NewTarget)
+	if (TrainerChar && AIController)
 	{
-		FVector TrainerLocation = TrainerChar->GetActorLocation();
-		FVector AILocation = GetActorLocation();
-		FVector DirectionVector = (TrainerLocation - AILocation).GetSafeNormal();
-		FRotator NewRotation = FRotationMatrix::MakeFromX(DirectionVector).Rotator();
-
-		SetActorRotation(NewRotation);
-
+		
+		bUseControllerRotationYaw = true;
+		//GetCharacterMovement()->bOrientRotationToMovement = false;
+		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TrainerChar->GetActorLocation());
+		SetActorRotation(LookAtRotation);
 	}
+
 }
 
 UBehaviorTree* AAICharacter::GetBehaviorTree() const
 {
 	return Tree;
 }
+
+
+
 
 
 

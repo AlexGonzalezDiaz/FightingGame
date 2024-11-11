@@ -22,6 +22,7 @@ ALocalRunner::ALocalRunner()
 
 void ALocalRunner::FixedUpdate(float DeltaTime)
 {
+
 	if (InState)
 	{
 		CurrTime += DeltaTime;

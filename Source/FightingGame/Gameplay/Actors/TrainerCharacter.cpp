@@ -2,11 +2,13 @@
 
 
 #include "Gameplay/Actors/TrainerCharacter.h"
+#include "Main/KaijuKolosseumGameState.h"
 #include "Gameplay/Actors/AICharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -47,30 +49,31 @@ void ATrainerCharacter::BeginPlay()
 void ATrainerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ATrainerCharacter::Update()
 {
 
-	LookAtTarget();
+	//LookAtTarget(); <---COMMENTING OUT until I find a quick way to call this. 
 }
 
+//Need to call this function once, no need for the tick function because this is the trainer character
 void ATrainerCharacter::LookAtTarget()
 {
-	UE_LOG(LogTemp, Log, TEXT("Calling LookAtTarget"));
-	if (RPGData.WKaiju)
+	AKaijuKolosseumGameState* GameState = Cast<AKaijuKolosseumGameState>(GetWorld()->GetGameState());
+	if (GameState)
 	{
-		
-		FVector TrainerLocation = RPGData.WKaiju->GetActorLocation();
-		FVector AILocation = GetActorLocation();
-		FVector DirectionVector = (TrainerLocation - AILocation).GetSafeNormal();
-		FRotator NewRotation = FRotationMatrix::MakeFromX(DirectionVector).Rotator();
+		if (GameState->CurrentGameState == EGameState::Overworld && RPGData.WKaiju)
+		{
 
-		SetActorRotation(NewRotation);
-		UE_LOG(LogTemp, Log, TEXT("Looking at target in trainer character"));
+			bUseControllerRotationYaw = true;
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), RPGData.WKaiju->GetActorLocation());
+			GetController()->SetControlRotation(LookAtRotation);
 
+		}
 	}
+	
 }
 
 void ATrainerCharacter::SetRPGData(const FRPGData& NewRPGData)

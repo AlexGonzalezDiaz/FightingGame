@@ -39,7 +39,7 @@ void UBTDecorator_SenseTrainer::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 
     if (bConditionMet)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Conditions met, requesting execution"));
+        //UE_LOG(LogTemp, Warning, TEXT("Conditions met, requesting execution"));
         OwnerComp.RequestExecution(this);
     }
 }
