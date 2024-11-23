@@ -10,15 +10,45 @@ class AFightingGameCharacter;
 class ATrainerCharacter;
 class ALocalRunner;
 class UCameraActor;
-/**
- * 
- */
+constexpr int32 MaxObjects = 2;
+//constexpr float OneFrame = 0.0166666666;
+
+USTRUCT(BlueprintType)
+struct FPvPBattleData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<TSubclassOf<AFightingGameCharacter>> PlayerList;
+
+	UPROPERTY()
+	AFightingGameCharacter* MainPlayer[2];
+
+	UPROPERTY(EditAnywhere)
+	FVector StartLocations[2];
+
+	TArray <AActor*> playerStartPoints;
+
+};
+
+
 UCLASS()
 class FIGHTINGGAME_API AKaijuPVPGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 
+public:
+	UPROPERTY(BluePrintReadWrite, EditAnywhere)
+	FPvPBattleData PVP_Data;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FTransform BattlePlayerTransform;
+
 protected:
+
+	UPROPERTY()
+	AFightingGameCharacter* Players[MaxObjects]{};
+
 	//Run in frames
 	ALocalRunner* LocalRunner;
 	ACameraActor* CameraActor;

@@ -8,6 +8,8 @@
 #include "Main/Runners/LocalRunner.h"
 #include "Gameplay/Controllers/KaijuPlayerController.h"
 #include "Gameplay/Controllers/TrainerController.h"
+#include "Main/FightingGameGameMode.h"
+#include "Components/CapsuleComponent.h"
 #include "NavigationSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -42,13 +44,26 @@ void AKaijuKolosseumGameState::BeginPlay()
 	CameraActor = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass());
 	CameraActor->GetCameraComponent()->SetFieldOfView(54);
 
+
 	//Spawn the tamer character
 	RPGPlayer = GetWorld()->SpawnActor<ATrainerCharacter>(RPGData.TrainerBP, FVector(960.0,900.0, 0.0), FRotator::ZeroRotator);
 	RPGData.Trainer = RPGPlayer;
 	UpdateCamera(GetGameState(), RPGData.Trainer);
 
-	
-	//FindPlayerStarts();
+	AFightingGameCharacter* SpawnedKaiju = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0]);
+	if (SpawnedKaiju)
+	{
+		// Initially hide the character and disable its functionality
+		SpawnedKaiju->SetActorHiddenInGame(false);
+		SpawnedKaiju->SetActorEnableCollision(false);
+		SpawnedKaiju->SetActorTickEnabled(false);
+		RPGData.PartnerKaiju = SpawnedKaiju;
+		FVector Extent = RPGData.PartnerKaiju->GetCapsuleComponent()->Bounds.BoxExtent;
+		BattleData.StartLocations[0] = Extent;
+	}
+	// Spawn the Blueprint version of the player controller
+	//KaijuController = GetWorld()->SpawnActor<AKaijuPlayerController>(PlayerControllerClass);
+	//KaijuController->SetViewTarget(CameraActor);
 
 	////Set up the GameState on the fighting character
 	//for (int i = 0; i < MaxPlayerObjects; i++)
@@ -67,89 +82,34 @@ void AKaijuKolosseumGameState::BeginPlay()
 }
 
 
-void AKaijuKolosseumGameState::FindPlayerStarts()
-{
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), BattleData.playerStartPoints); // Get all actors of type APlayerStart
-
-	for (AActor* Actor : BattleData.playerStartPoints)
-	{
-		APlayerStart* PlayerStart = Cast<APlayerStart>(Actor); // Cast to APlayerStart
-
-		if (PlayerStart)
-		{
-			FString Tag = PlayerStart->PlayerStartTag.ToString(); // Get the tag of the player start
-			int32 ActorLocX = static_cast<int32>(PlayerStart->GetActorLocation().X);
-			int32 ActorLocY = static_cast<int32>(PlayerStart->GetActorLocation().Y);
-			int32 ActorLocZ = static_cast<int32>(PlayerStart->GetActorLocation().Z);
-			ActorLocZ = 0;
-			// Compare the tag to determine if it's the one you're looking for
-			if (Tag == "P1")
-			{
-				//For the rotation to match up, consider looking how to customize the player start positions. 
-				BattleData.StartLocations[0] = FVector(ActorLocX, ActorLocY, ActorLocZ);
-
-			}
-			if (Tag == "P2")
-			{
-				BattleData.StartLocations[1] = FVector(ActorLocX, ActorLocY, ActorLocZ);
-
-			}
-		}
-	}
-
-	Init();
-}
-
-
 void AKaijuKolosseumGameState::Init()
 {
 
-	for (int i = 0; i < MaxPlayerObjects; i++)
-	{
-		Players[i] = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0], BattleData.StartLocations[i], FRotator::ZeroRotator);
-		Players[i]->PlayerIndex = i; //Setting player 1 and 2.
-	}
-	//Filling out the BattleData
-	BattleData.MainPlayer[0] = Players[0];
-	BattleData.MainPlayer[1] = Players[1];
+	//for (int i = 0; i < MaxPlayerObjects; i++)
+	//{
+	//	Players[i] = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0], BattleData.StartLocations[i], FRotator::ZeroRotator);
+	//	Players[i]->PlayerIndex = i; //Setting player 1 and 2.
+	//}
+	////Filling out the BattleData
+	//BattleData.MainPlayer[0] = Players[0];
+	//BattleData.MainPlayer[1] = Players[1];
 
 }
 
-void AKaijuKolosseumGameState::AssignControllers(AFightingGameCharacter* Player, ATrainerCharacter* Trainer)
+void AKaijuKolosseumGameState::AssignControllers(AFightingGameCharacter* Kaiju, ATrainerCharacter* Trainer)
 {
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		UE_LOG(LogTemp, Error, TEXT("World is null in AssignControllers"));
-		return;
-	}
-
 	// Get the existing player controller
-	APlayerController* ExistingController = UGameplayStatics::GetPlayerController(World, 0);
-	ATrainerController* TrainerController = Cast<ATrainerController>(ExistingController);
+	KaijuController = Cast<AKaijuPlayerController>(GetWorld()->GetFirstPlayerController());
 
-	if (CurrentGameState==EGameState::Overworld && TrainerController)
+	if (CurrentGameState == EGameState::Overworld && KaijuController)
 	{
-		// Possess the trainer character with the existing controller
-		TrainerController->Possess(Trainer);
-		UE_LOG(LogTemp, Log, TEXT("Assigned existing controller ID %s to trainer"), *TrainerController->GetName());
+		KaijuController->Possess(Trainer);
 	}
-	else if(CurrentGameState == EGameState::Battle && Player && TrainerController)
+	if (CurrentGameState == EGameState::Battle && KaijuController)
 	{
-		TrainerController->UnPossess();
-		TrainerController->Possess(Player);
-		//UE_LOG(LogTemp, Log, TEXT("Assigned existing controller ID %s to trainer"), *TrainerController->GetOwner());
+		KaijuController->UnPossess();
+		KaijuController->Possess(Kaiju);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to find TrainerController for player index %d"), PlayerIndex);
-	}
-	//UWorld* World = GetWorld();
-	//if (!World)
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("World is null in AssignControllers"));
-	//	return;
-	//}
 
 	//// Ensure we have a valid PlayerControllerClass
 	//if (!PlayerControllerClass)
@@ -193,41 +153,67 @@ void AKaijuKolosseumGameState::AssignControllers(AFightingGameCharacter* Player,
 	//}
 }
 
+
+
 int AKaijuKolosseumGameState::GetLocalInputs(int Index) const
 {
-	//// Retrieve the player controller
-	//if (const AKaijuPlayerController* Controller = Cast<AKaijuPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), Index)))
-	//{
-	//	if (IsValid(Controller))
-	//	{
-	//		if (Index == 0)
-	//		{
-	//			FString InputsString = FString::Printf(TEXT("%i"), Controller->Inputs);
-	//			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, InputsString);
-	//		}
-	//		if (Index == 1)
-	//		{
-	//			FString InputsString2 = FString::Printf(TEXT("%i"), Controller->Inputs);
-	//			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString2);
-	//		}
-	//		return Controller->Inputs;
-	//	}
-	//}
+	// Retrieve the player controller
+	if (KaijuController)
+	{
+		if (IsValid(KaijuController))
+		{
+			if (Index == 0) //Changed this index to -1 for testing
+			{
+				FString InputsString = FString::Printf(TEXT("%i"), KaijuController->Inputs);
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, InputsString);
+			}
+			if (Index == 1)
+			{
+				FString InputsString2 = FString::Printf(TEXT("%i"), KaijuController->Inputs);
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, InputsString2);
+			}
+			return KaijuController->Inputs;
+		}
+		else
+		{
+			FString InputsString4 = FString::Printf(TEXT("No controller"));
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, InputsString4);
+		}
+	}
+	else
+	{
+		FString InputsString3 = FString::Printf(TEXT("No controller"));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, InputsString3);
+	}
 
 	return 0;
 }
 
 void AKaijuKolosseumGameState::UpdateState()
 {
-	if (CurrentGameState == EGameState::Battle && RPGData.PartnerKaiju)
+	if (CurrentGameState == EGameState::Battle && finishedBattlePosition)
 	{
 		RPGData.WKaiju->Update();
-		RPGData.PartnerKaiju->Update();
+		//RPGData.PartnerKaiju->Update();
 		UpdateCamera(CurrentGameState, nullptr);
+		UpdateState(GetLocalInputs(0), GetLocalInputs(1));
+
+		FVector Origin2 = RPGData.PartnerKaiju->GetActorLocation();
+		FVector Extent2 = RPGData.PartnerKaiju->GetCapsuleComponent()->Bounds.BoxExtent;
+
+		DrawDebugBox(
+			GetWorld(),
+			Origin2,
+			Extent2,
+			FColor::Blue,
+			false,
+			-1.0f,
+			0,
+			5.0f
+		);
 	}
 	//UpdateLocalInput() to find the inputs of p1 and p2 for future use
 	//UpdateState should just only get the local inputs of p1. 
-	//UpdateState(GetLocalInputs(0), GetLocalInputs(1));
 }
 
 void AKaijuKolosseumGameState::UpdateCamera(EGameState CurrState, ATrainerCharacter* Player)
@@ -237,7 +223,7 @@ void AKaijuKolosseumGameState::UpdateCamera(EGameState CurrState, ATrainerCharac
 		// Need to have the trainer character first to find the midpoint between the kaiju and the player.
 		// Make a condition to track when the other kaiju has spawned to then update the camera again.
 		// The camera will then just slowly move to in between the wild kaiju and the possessed kaiju
-		if (GetGameState() == EGameState::Battle && RPGData.PartnerKaiju && RPGData.WKaiju)
+		if (GetGameState() == EGameState::Battle && finishedBattlePosition && RPGData.WKaiju)
 		{
 			// Get positions of both actors
 			FVector PartnerLocation = RPGData.PartnerKaiju->GetActorLocation();
@@ -305,15 +291,15 @@ void AKaijuKolosseumGameState::UpdateCamera(EGameState CurrState, ATrainerCharac
 
 void AKaijuKolosseumGameState::UpdateState(int32 P1Inputs, int32 P2Inputs)
 {
-	UpdateCamera(GetGameState(), RPGData.Trainer);
+	//UpdateCamera(GetGameState(), RPGData.Trainer);
 	// Passing inputs by frame.
 	Players[0]->Inputs = P1Inputs;
-	Players[1]->Inputs = P2Inputs;
+	//Players[1]->Inputs = P2Inputs;
 	// Updating the player character by frame.
 	Players[0]->Update(); 
-	Players[1]->Update();
+	//Players[1]->Update();
 	//RPGData.WKaiju->Update();
-	//RPGPlayer->Update();
+	RPGPlayer->Update();
 }
 
 void AKaijuKolosseumGameState::SetGameState(EGameState NewState)
@@ -376,17 +362,38 @@ void AKaijuKolosseumGameState::SpawnAIKaiju()
 
 void AKaijuKolosseumGameState::SpawnPartner(int Distance)
 {
-	if (RPGData.Trainer)
+	if (RPGData.Trainer && RPGData.PartnerKaiju)
 	{
+		// Calculate the new location in front of the trainer
 		FVector NewLocation = RPGData.Trainer->GetActorLocation() + (RPGData.Trainer->GetActorForwardVector() * Distance);
+
+		NewLocation.Z = BattleData.StartLocations[0].Z;
 		FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(NewLocation, RPGData.WKaiju->GetActorLocation());
 
-		AFightingGameCharacter* SpawnedKaiju = GetWorld()->SpawnActor<AFightingGameCharacter>(BattleData.PlayerList[0], FVector(NewLocation.X,NewLocation.Y,0), LookAtRotation);
-		RPGData.PartnerKaiju = SpawnedKaiju;
-		AssignControllers(SpawnedKaiju, RPGPlayer);
+		// Set up the partner Kaiju
+		RPGData.PartnerKaiju->SetActorHiddenInGame(false);
+		RPGData.PartnerKaiju->SetActorEnableCollision(true);
+		RPGData.PartnerKaiju->SetActorTickEnabled(true);
+		RPGData.PartnerKaiju->SetActorLocation(NewLocation);
+		RPGData.PartnerKaiju->SetActorRotation(LookAtRotation);
+		RPGData.PartnerKaiju->GameState = this;
 
+		// Update battle data
+		BattleData.StartLocations[0] = NewLocation;
+		Players[0] = RPGData.PartnerKaiju;
+		Players[0]->PosX = NewLocation.X;
+		Players[0]->PosY = NewLocation.Y;
+		Players[0]->PosZ = NewLocation.Z;
+		Players[0]->GroundLevel = NewLocation.Z;
+
+		UE_LOG(LogTemp, Warning, TEXT("Final Partner Location: X=%f, Y=%f, Z=%f"), NewLocation.X, NewLocation.Y, NewLocation.Z);
+
+		finishedBattlePosition = true;
 	}
+
+	AssignControllers(RPGData.PartnerKaiju, nullptr);
 }
+
 
 
 

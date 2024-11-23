@@ -54,7 +54,7 @@ void ATrainerCharacter::Tick(float DeltaTime)
 void ATrainerCharacter::Update()
 {
 
-	//LookAtTarget(); <---COMMENTING OUT until I find a quick way to call this. 
+	LookAtTarget();
 }
 
 //Need to call this function once, no need for the tick function because this is the trainer character

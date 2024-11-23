@@ -22,7 +22,6 @@
 AFightingGameCharacter::AFightingGameCharacter()
 {
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -44,10 +43,10 @@ AFightingGameCharacter::AFightingGameCharacter()
 	
 
 	//// Create a camera boom (pulls in towards the player if there is a collision)
-	fightingGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainBox"));
+	/*fightingGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MainBox"));
 	fightingGameBox->SetupAttachment(GetMesh());
 	proximityGameBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProximityBox"));
-	proximityGameBox->SetupAttachment(GetMesh());
+	proximityGameBox->SetupAttachment(GetMesh());*/
 	
 	YVec = GetActorForwardVector();
 
@@ -106,12 +105,28 @@ AFightingGameCharacter::AFightingGameCharacter()
 	jumpCount = 0;
 
 }
+void AFightingGameCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	// Perform any necessary initialization here
+	// Add debug log
+	UE_LOG(LogTemp, Log, TEXT("Broadcasting OnCharacterFullyInitialized for %s"), *GetName());
+
+	// Broadcast that the character is fully initialized
+	if (OnCharacterFullyInitialized.IsBound())
+	{
+		OnCharacterFullyInitialized.Broadcast();
+		UE_LOG(LogTemp, Log, TEXT("Bound and broadcasting"));
+	}
+		
+}
 void AFightingGameCharacter::Update()
 {
-	/*SavedStateMachine.Update(Inputs);
-	Move();
-	CharacterState = SavedStateMachine.CurrState;*/
 	LookAtTarget();
+	SavedStateMachine.Update(Inputs);
+	Move();
+	CharacterState = SavedStateMachine.CurrState;
 
 }
 
@@ -160,10 +175,6 @@ void AFightingGameCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-
-	PosX = GetActorLocation().X;
-	PosY = GetActorLocation().Y;
-	PosZ = GetActorLocation().Z;
 
 	SavedStateMachine.Parent = this;
 	SavedStateMachine.LoadStates(this, DataAsset);
@@ -366,7 +377,7 @@ void AFightingGameCharacter::LookAtTarget()
 		{
 
 			bUseControllerRotationYaw = true;
-			GetCharacterMovement()->bOrientRotationToMovement = false;
+			//GetCharacterMovement()->bOrientRotationToMovement = false;
 			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), GameState->RPGData.WKaiju->GetActorLocation());
 			GetController()->SetControlRotation(LookAtRotation);
 

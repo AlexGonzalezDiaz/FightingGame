@@ -84,12 +84,16 @@ public:
 	//Sets default values for the this actors properties
 	AKaijuKolosseumGameState();
 
+	bool finishedBattlePosition = false;
 	/*---- CONTROLLERS ---*/
 	UPROPERTY(EditDefaultsOnly, Category = "Controller")
 	TSubclassOf<AKaijuPlayerController> PlayerControllerClass;
 
 	UPROPERTY(EditDefaultsOnly,Category = "Controllers")
 	TSubclassOf<ATrainerController> TrainerControllerClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	AKaijuPlayerController* KaijuController;
 	/*---- CONTROLLERS ---*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -106,6 +110,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FTransform BattlePlayerTransform;
+
+	class AFightingGameGameMode* GameMode;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game State")
 	EGameState CurrentGameState;
@@ -153,8 +159,6 @@ protected:
 	//Spawns the characters and sets the BattleInfo player arrays. 
 	void Init(); 
 	//Set the players from the player list to be the main characters. 
-	//Finds the PlayerStarts so we can use their location.
-	void FindPlayerStarts();
 
 private:
 	int32 PlayerIndex = 0;

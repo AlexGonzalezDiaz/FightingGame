@@ -20,6 +20,8 @@ class AFightingGameCharacter : public ACharacter
 protected:
 	AFightingGameCharacter();
 
+	virtual void PostInitializeComponents() override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = FGCollisions, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* fightingGameBox;
 
@@ -50,6 +52,11 @@ protected:
 	class UInputAction* AttackAction;
 	
 public:
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterFullyInitialized);
+
+	UPROPERTY(BlueprintAssignable, Category = "Initialization")
+	FOnCharacterFullyInitialized OnCharacterFullyInitialized;
 
 	//---++       STATEHANDLING     ++---
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateMachine")

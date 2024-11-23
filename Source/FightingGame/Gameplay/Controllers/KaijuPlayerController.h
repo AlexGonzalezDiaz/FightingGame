@@ -13,6 +13,7 @@
 class UEnhancedInputComponent;
 class UInputMappingContext;
 class AFightingGameCharacter;
+class AKaijuKolosseumGameState;
 
 USTRUCT()
 struct FBattleInputActions
@@ -29,6 +30,17 @@ struct FBattleInputActions
 	TObjectPtr<const UInputAction> ReleaseForward;
 };
 
+USTRUCT()
+struct FRPGInputActions
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<const UInputAction> Move;
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<const UInputAction> Interact;
+};
+
 UCLASS()
 class FIGHTINGGAME_API AKaijuPlayerController : public APlayerController
 {	
@@ -41,7 +53,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TSoftObjectPtr<UInputMappingContext> InputMapping;
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TSoftObjectPtr<UInputMappingContext> ExploringMapping;
+	UPROPERTY(EditAnywhere, Category = "Input")
 	FBattleInputActions InputActions;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	FRPGInputActions RPGActions;
 
 	int Inputs;
 
@@ -51,12 +67,25 @@ protected:
 	void PressForward();
 	void ReleaseForward();
 
+	void SwitchInputMapping(UInputMappingContext* NewMapping);
+
+	/*
+	* RPG Controlls and functions
+	*/
+	void Move(const FInputActionValue& Value);
+
+	void Interact(const FInputActionValue& Value);
+
 private:
 	UPROPERTY()
 	TObjectPtr<UEnhancedInputComponent> EnhancedInputComponent = nullptr;
 
 	UPROPERTY()
 	TObjectPtr<AFightingGameCharacter> PlayerCharacter = nullptr;
+
+	UPROPERTY()
+	AKaijuKolosseumGameState* GameState;
+
 
 	virtual void SetupInputComponent() override;
 

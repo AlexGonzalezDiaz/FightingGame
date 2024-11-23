@@ -3,6 +3,7 @@
 
 #include "Main/KaijuPVPGameState.h"
 #include "Main/Runners/LocalRunner.h"
+#include "Gameplay/Actors/FightingGameCharacter.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 
@@ -39,6 +40,14 @@ void AKaijuPVPGameState::BeginPlay()
 
 void AKaijuPVPGameState::Init()
 {
+	for (int i = 0; i < MaxObjects; i++)
+	{
+		Players[i] = GetWorld()->SpawnActor<AFightingGameCharacter>(PVP_Data.PlayerList[0], PVP_Data.StartLocations[i], FRotator::ZeroRotator);
+		Players[i]->PlayerIndex = i; //Setting player 1 and 2.
+	}
+	//Filling out the BattleData
+	PVP_Data.MainPlayer[0] = Players[0];
+	PVP_Data.MainPlayer[1] = Players[1];
 }
 
 void AKaijuPVPGameState::FindPlayerStarts()
